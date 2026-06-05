@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Store | MECH DEPT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+Thai:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;700&family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===== THEME VARIABLES (เชื่อมต่อสอดคล้องกับระบบหลัก) ===== */
+        :root {
+            --bg: #ffffff;
+            --bg-card: #ffffff;
+            --bg-nav: #ffffff;
+            --bg-hover: rgba(0, 0, 0, 0.05);
+            --fg: #000000;
+            --border: #d0d0d0;
+            --muted: #888888;
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.02);
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] {
+            --bg: #0a0a0a;
+            --bg-card: #0a0a0a;
+            --bg-nav: #000000;
+            --bg-hover: rgba(255, 255, 255, 0.1);
+            --fg: #f0f0f0;
+            --border: #2a2a2a;
+            --muted: #666666;
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.5);
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.8);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font-family: 'Noto Sans Thai', sans-serif;
+            min-height: 100vh;
+            padding-top: 100px;
+            transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .eng { font-family: 'Chakra Petch', 'Bebas Neue', sans-serif; }
+
+        /* ===== DARK MODE TOGGLE (ย้ายตำแหน่งมาตรฐาน) ===== */
+        .dark-toggle {
+            position: fixed; top: 22px; right: 20px; width: 45px; height: 45px;
+            background: var(--bg-card); border-radius: 0px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2100; box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            cursor: pointer; transition: transform .2s, background .3s;
+        }
+        .dark-toggle:hover { transform: scale(1.05); }
+        .dark-toggle .icon-sun  { display: none; }
+        .dark-toggle .icon-moon { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-sun  { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-moon { display: none; }
+
+        /* ===== TOP NAV BAR (DESKTOP) ===== */
+        .top-nav-bar {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+            background: var(--bg-nav); height: 60px; padding: 0 8px; border-radius: 0px;
+            display: flex; align-items: center; gap: 5px; z-index: 2000;
+            box-shadow: var(--shadow-nav); width: fit-content; min-width: 580px;
+            border: 1px solid var(--border); transition: background .3s, border .3s;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 8px; color: var(--fg);
+            opacity: 0.6; text-decoration: none; font-weight: 500; padding: 10px 15px;
+            border-radius: 0px; font-size: 13px; font-family: 'Noto Sans Thai', sans-serif;
+            transition: all .2s; white-space: nowrap;
+        }
+        .nav-item:hover { background: var(--bg-hover); opacity: 1; }
+        .nav-item.active { background: var(--fg); color: var(--bg); font-weight: bold; opacity: 1; }
+
+        /* ===== BOTTOM NAV (MOBILE) ===== */
+        .bottom-nav {
+            display: none;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--bg-nav); border-top: 1px solid var(--border);
+            z-index: 2000; padding: 8px 0 env(safe-area-inset-bottom, 8px);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            transition: background .3s;
+        }
+        .bottom-nav-inner {
+            display: flex; justify-content: space-around; align-items: center;
+        }
+        .bnav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            color: var(--muted); text-decoration: none;
+            font-size: 10px; font-family: 'Noto Sans Thai', sans-serif;
+            padding: 6px 12px; transition: all .2s; min-width: 56px;
+        }
+        .bnav-item i { font-size: 18px; }
+        .bnav-item.active { color: var(--fg); font-weight: bold; }
+
+        /* ─── MAIN CONTENT ─── */
+        .page {
+            position: relative; z-index: 10;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 2rem 2rem 4rem;
+        }
+
+        .eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.55rem; font-weight: 700;
+            letter-spacing: 0.5em; text-transform: uppercase;
+            opacity: 0.4; margin-bottom: 1.25rem; text-align: center;
+        }
+
+        .page-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(3.5rem, 8vw, 6rem);
+            line-height: 0.9; letter-spacing: -0.01em;
+            text-align: center; margin-bottom: 0.75rem;
+        }
+
+        .divider {
+            width: 40px; height: 1px;
+            background: var(--fg); opacity: 0.2;
+            margin: 0 auto 3rem;
+        }
+
+        /* ─── STORE CARDS GRID ─── */
+        .cards-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0;
+            max-width: 800px;
+            width: 100%;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+            background: color-mix(in srgb, var(--bg) 75%, transparent);
+        }
+
+        .store-card {
+            flex: 1 1 220px;
+            min-width: 200px;
+            max-width: 280px;
+            padding: 2.5rem 2rem;
+            border-right: 1px solid var(--border);
+            text-decoration: none; color: var(--fg);
+            position: relative; overflow: hidden;
+            transition: 0.3s;
+        }
+        .store-card:last-child { border-right: none; }
+
+        .store-card::before {
+            content: ''; position: absolute; inset: 0;
+            background: var(--fg); transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+            z-index: 0;
+        }
+        .store-card:hover::before { transform: translateY(0); }
+        .store-card > * { position: relative; z-index: 1; }
+        .store-card:hover { color: var(--bg); }
+
+        .store-icon { font-size: 1.4rem; margin-bottom: 1.25rem; opacity: 0.7; }
+        .store-name {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem; letter-spacing: 0.05em; margin-bottom: 0.2rem;
+        }
+        .store-tag {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.5rem; font-weight: 700;
+            letter-spacing: 0.2em; text-transform: uppercase;
+            opacity: 0.4; margin-bottom: 1.25rem; display: block;
+        }
+        .store-desc {
+            font-size: 0.8rem; opacity: 0.55;
+            line-height: 1.7; margin-bottom: 2rem; font-weight: 300;
+        }
+        .store-link {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.55rem; font-weight: 700;
+            letter-spacing: 0.2em; text-transform: uppercase;
+            border-bottom: 1px solid currentColor; padding-bottom: 2px;
+        }
+
+        .footer-note {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.5rem; letter-spacing: 0.35em;
+            text-transform: uppercase; opacity: 0.25;
+            margin-top: 2.5rem;
+        }
+
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        .fade-up { animation: fadeUp .4s ease forwards; }
+
+        /* ===== RESPONSIVE BREAKPOINTS ===== */
+        @media (max-width: 768px) {
+            body { padding-top: 20px; padding-bottom: 80px; }
+            .top-nav-bar { display: none !important; }
+            .bottom-nav { display: block; }
+            .dark-toggle { top: 12px; right: 16px; width: 38px; height: 38px; }
+            .cards-wrap { flex-direction: column; border: none; gap: 16px; }
+            .store-card { border: 1px solid var(--border) !important; max-width: 100%; flex-basis: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<button class="dark-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+    <i class="fa-solid fa-moon text-base icon-moon"></i>
+    <i class="fa-solid fa-sun text-base icon-sun"></i>
+</button>
+
+<nav class="top-nav-bar">
+    <a href="index.html" class="nav-item"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
+    <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-chart-line"></i><span>สรุปสต็อก</span></a>
+    <a href="dashboard-work.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
+    <a href="working-time.html" class="nav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
+    <a href="inventory-select.html" class="nav-item active"><i class="fa-solid fa-boxes-stacked"></i><span>จัดการสต็อก</span></a>
+</nav>
+
+<nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+        <a href="index.html" class="bnav-item"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
+        <a href="dashboard.html" class="bnav-item"><i class="fa-solid fa-chart-line"></i><span>สต็อก</span></a>
+        <a href="dashboard-work.html" class="bnav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
+        <a href="working-time.html" class="bnav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
+        <a href="inventory-select.html" class="bnav-item active"><i class="fa-solid fa-boxes-stacked"></i><span>สต็อก</span></a>
+    </div>
+</nav>
+
+<div class="page fade-up">
+    <p class="eyebrow">Inventory Management System</p>
+    <h1 class="page-title">SELECT WAREHOUSE.</h1>
+    <div class="divider"></div>
+
+    <div class="cards-wrap">
+        <a href="inventory.html" onclick="checkAccess(event, 'inventory.html')" class="store-card">
+            <div class="store-icon"><i class="fa-solid fa-microchip"></i></div>
+            <div class="store-name">KP_25</div>
+            <span class="store-tag">Main Machine Parts</span>
+            <p class="store-desc">ระบบจัดการสต็อกอะไหล่เครื่องจักรหลักสำหรับฝ่ายวิศวกรรมการผลิต</p>
+            <span class="store-link">Access KP_25</span>
+        </a>
+        <a href="inventory-kpr1.html" onclick="checkAccess(event, 'inventory-kpr1.html')" class="store-card">
+            <div class="store-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+            <div class="store-name">KP_R1</div>
+            <span class="store-tag">Tools & Inserts</span>
+            <p class="store-desc">คลังเก็บอุปกรณ์เครื่องมือ เม็ดมีด และชิ้นส่วนปลอกจับยึดทางเทคนิค</p>
+            <span class="store-link">Access KP_R1</span>
+        </a>
+    </div>
+
+    <p class="footer-note">Precision &amp; Reliability Hub · 2026</p>
+</div>
+
+<script>
+    // ===== SYSTEM LIGHT/DARK THEME (มาตรฐานเดียวกับทั้งโปรเจกต์) =====
+    function toggleTheme() {
+        const html = document.documentElement;
+        const isDark = html.getAttribute('data-theme') === 'dark';
+        const newTheme = isDark ? 'light' : 'dark';
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme); // เปลี่ยนชื่อคีย์เป็น 'theme' เหมือนหน้าอื่น
+    }
+
+    // โหลดความจำธีมทันทีเพื่อป้องกันจอกระพริบ (IIFE)
+    (function() {
+        const saved = localStorage.getItem('theme');
+        if (saved) {
+            document.documentElement.setAttribute('data-theme', saved);
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    })();
+
+    // ===== ACCESSIBILITY CHECK SYSTEM =====
+    function checkAccess(event, targetPage) {
+        event.preventDefault(); // บล็อกชั่วคราว
+        
+        // ตรวจสอบข้อมูลล็อกอินใน Session
+        if (sessionStorage.getItem("isLoggedIn") !== "true") {
+            alert("❌ หน้านี้สำหรับเจ้าหน้าที่คลัง กรุณาเข้าสู่ระบบก่อนใช้งานครับ");
+            
+            // บันทึกหน้าที่กำลังจะเข้า เก็บเอาไว้เพื่อเรียกใช้หลังล็อกอินเสร็จ
+            sessionStorage.setItem("redirectAfterLogin", targetPage); 
+            window.location.href = "login.html"; // ดีดไปหน้า Login
+        } else {
+            window.location.href = targetPage; // ผ่านฉลุย ไปต่อได้เลย
+        }
+    }
+</script>
+</body>
+</html>

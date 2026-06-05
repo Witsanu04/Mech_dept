@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Working Records | Mechanization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700;900&family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+        /* ===== THEME VARIABLES ===== */
+        :root {
+            --green: #22c55e;
+            --green-light: rgba(34,197,94,0.1);
+            --bg: #f0f4f8;
+            --bg-card: #ffffff;
+            --bg-nav: #ffffff;
+            --bg-input: #fafafa;
+            --bg-hover: rgba(248,250,252,0.8);
+            --bg-thead: #f8fafc;
+            --border: #f1f5f9;
+            --border-input: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.04);
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.08);
+            --divider: #f1f5f9;
+        }
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-nav: #1e293b;
+            --bg-input: #0f172a;
+            --bg-hover: rgba(255,255,255,0.03);
+            --bg-thead: #162032;
+            --border: #334155;
+            --border-input: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #475569;
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.25);
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.4);
+            --divider: #1e293b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            background-image: radial-gradient(circle at 20% 20%, rgba(34,197,94,0.05) 0%, transparent 50%);
+            font-family: 'Sarabun', sans-serif;
+            padding-top: 100px;
+            min-height: 100vh;
+            color: var(--text-primary);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .eng { font-family: 'Chakra Petch', sans-serif; }
+
+        /* ===== BACK BUTTON ===== */
+        .back-btn {
+            position: fixed; top: 22px; left: 20px; width: 45px; height: 45px;
+            background: var(--bg-card); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2100; box-shadow: var(--shadow-card);
+            border: 1px solid var(--border); transition: transform .2s, background .3s;
+        }
+        .back-btn:hover { transform: scale(1.05); }
+
+        /* ===== DARK MODE TOGGLE ===== */
+        .dark-toggle {
+            position: fixed; top: 22px; right: 20px; width: 45px; height: 45px;
+            background: var(--bg-card); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2100; box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            cursor: pointer; transition: transform .2s, background .3s;
+        }
+        .dark-toggle:hover { transform: scale(1.05); }
+        .dark-toggle .icon-sun  { display: none; }
+        .dark-toggle .icon-moon { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-sun  { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-moon { display: none; }
+
+        /* ===== TOP NAV (DESKTOP) ===== */
+        .top-nav-bar {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+            background: var(--bg-nav); height: 60px; padding: 0 8px; border-radius: 18px;
+            display: flex; align-items: center; gap: 5px; z-index: 2000;
+            box-shadow: var(--shadow-nav); width: fit-content; min-width: 550px;
+            border: 1px solid var(--border); transition: background .3s, border .3s;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 8px; color: var(--text-secondary);
+            text-decoration: none; font-weight: 500; padding: 10px 15px;
+            border-radius: 12px; font-size: 13px; font-family: 'Sarabun', sans-serif;
+            transition: all .2s; white-space: nowrap;
+        }
+        .nav-item:hover { background: var(--bg-hover); }
+        .nav-item.active { background: #22c55e; color: white; box-shadow: 0 4px 12px rgba(34,197,94,0.25); }
+
+        /* ===== BOTTOM NAV (MOBILE) ===== */
+        .bottom-nav {
+            display: none;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--bg-nav); border-top: 1px solid var(--border);
+            z-index: 2000; padding: 8px 0 env(safe-area-inset-bottom, 8px);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            transition: background .3s;
+        }
+        .bottom-nav-inner {
+            display: flex; justify-content: space-around; align-items: center;
+        }
+        .bnav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            color: var(--text-muted); text-decoration: none;
+            font-size: 10px; font-family: 'Sarabun', sans-serif;
+            padding: 6px 12px; border-radius: 12px; transition: all .2s; min-width: 56px;
+        }
+        .bnav-item i { font-size: 18px; }
+        .bnav-item.active { color: #22c55e; }
+        .bnav-item.active i { color: #22c55e; }
+
+        /* ===== GLASS CARD ===== */
+        .glass-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 24px; box-shadow: var(--shadow-card); overflow: hidden;
+            transition: background .3s, border .3s;
+        }
+
+        /* ===== STATUS BADGES ===== */
+        .status-badge { padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; display: inline-block; text-transform: uppercase; }
+        .status-done    { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+        .status-pending { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+        .status-urgent  { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+        [data-theme="dark"] .status-done    { background: rgba(22,163,74,0.15); border-color: rgba(22,163,74,0.25); }
+        [data-theme="dark"] .status-pending { background: rgba(37,99,235,0.15); border-color: rgba(37,99,235,0.25); }
+        [data-theme="dark"] .status-urgent  { background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.25); }
+
+        /* ===== TABLE ===== */
+        .work-table th {
+            background: var(--bg-thead); color: var(--text-muted);
+            font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 14px 20px; border-bottom: 1px solid var(--border);
+            transition: background .3s;
+        }
+        .work-table td {
+            padding: 16px 20px; border-bottom: 1px solid var(--divider);
+            transition: background .15s;
+        }
+        .work-table tr:last-child td { border-bottom: none; }
+        .work-table tbody tr:hover td { background: var(--bg-hover); }
+
+        /* ===== MOBILE CARD VIEW ===== */
+        .work-cards { display: none; }
+
+        .work-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 18px; padding: 18px; margin-bottom: 12px;
+            box-shadow: var(--shadow-card); transition: background .3s, border .3s;
+        }
+        .work-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .work-card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+        .work-card-field label { font-size: 10px; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .work-card-field span { font-size: 13px; color: var(--text-secondary); }
+        .work-card-detail { grid-column: 1 / -1; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border); }
+        .week-badge {
+            background: var(--bg-thead); color: var(--text-muted);
+            border: 1px solid var(--border); border-radius: 8px;
+            font-size: 10px; font-weight: 800; padding: 3px 10px;
+            font-family: 'Chakra Petch', sans-serif;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+            backdrop-filter: blur(6px); z-index: 9000;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity .25s;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal-box {
+            background: var(--bg-card); border-radius: 28px; padding: 32px;
+            width: 100%; max-width: 520px; margin: 16px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            transform: scale(.95) translateY(20px);
+            transition: transform .3s, opacity .3s, background .3s;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+
+        .form-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block; letter-spacing: .5px; text-transform: uppercase; }
+        .form-input, .form-select {
+            width: 100%; border: 1.5px solid var(--border-input); border-radius: 12px;
+            padding: 11px 14px; font-size: 14px; font-family: 'Sarabun', sans-serif;
+            outline: none; transition: border-color .2s, box-shadow .2s, background .3s;
+            background: var(--bg-input); color: var(--text-primary);
+        }
+        .form-input:focus, .form-select:focus {
+            border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.12); background: var(--bg-card);
+        }
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 40px;
+        }
+        [data-theme="dark"] .form-select option { background: #1e293b; }
+
+        /* ===== SEARCH INPUT ===== */
+        .search-wrap input {
+            background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-primary); transition: background .3s, border .3s;
+        }
+        .search-wrap input:focus { border-color: #22c55e; outline: none; }
+        .search-wrap input::placeholder { color: var(--text-muted); }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: #1e293b; color: white; padding: 12px 24px; border-radius: 14px;
+            font-size: 14px; z-index: 9999; transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25); pointer-events: none; white-space: nowrap;
+        }
+        [data-theme="dark"] .toast { background: #334155; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        .fade-up { animation: fadeUp .4s ease forwards; }
+        .section-label { font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
+
+        /* ===== FAB (mobile add button) ===== */
+        .fab {
+            display: none; position: fixed; bottom: 80px; right: 20px;
+            width: 56px; height: 56px; background: #22c55e; border-radius: 50%;
+            align-items: center; justify-content: center; z-index: 1500;
+            box-shadow: 0 6px 20px rgba(34,197,94,0.4); cursor: pointer;
+            border: none; transition: transform .2s;
+        }
+        .fab:hover { transform: scale(1.08); }
+        .fab:active { transform: scale(0.95); }
+
+        /* ===== RESPONSIVE BREAKPOINTS ===== */
+        @media (max-width: 768px) {
+            body { padding-top: 20px; padding-bottom: 80px; }
+            .top-nav-bar { display: none !important; }
+            .back-btn { display: none; }
+            .bottom-nav { display: block; }
+            .fab { display: flex; }
+            .add-btn-desktop { display: none !important; }
+            .work-table-wrap { display: none !important; }
+            .work-cards { display: block; }
+            main { padding: 16px 16px 0; }
+            .header-row { flex-direction: column; gap: 12px; align-items: flex-start !important; }
+            h1.page-title { font-size: 22px; }
+            .toast { bottom: 90px; }
+            .modal-box { padding: 24px 20px; border-radius: 20px; margin: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+            .modal-overlay { align-items: flex-end; }
+            .modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Back button (desktop) -->
+<a href="javascript:history.back()" class="back-btn">
+    <i class="fa-solid fa-chevron-left text-slate-500 text-lg"></i>
+</a>
+
+<!-- Dark mode toggle -->
+<button class="dark-toggle" onclick="toggleDark()" aria-label="Toggle dark mode">
+    <i class="fa-solid fa-moon text-slate-400 text-base icon-moon"></i>
+    <i class="fa-solid fa-sun text-yellow-400 text-base icon-sun"></i>
+</button>
+
+<!-- Top nav (desktop) -->
+<nav class="top-nav-bar">
+    <a href="index.html" class="nav-item"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
+    <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-chart-line"></i><span>สรุปสต็อก</span></a>
+    <a href="dashboard-work.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
+    <a href="working-time.html" class="nav-item active"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
+    <a href="inventory-select.html" class="nav-item"><i class="fa-solid fa-boxes-stacked"></i><span>จัดการสต็อก</span></a>
+</nav>
+
+<!-- Bottom nav (mobile) -->
+<nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+        <a href="index.html" class="bnav-item"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
+        <a href="dashboard.html" class="bnav-item"><i class="fa-solid fa-chart-line"></i><span>สต็อก</span></a>
+        <a href="dashboard-work.html" class="bnav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
+        <a href="working-time.html" class="bnav-item active"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
+        <a href="inventory-select.html" class="bnav-item"><i class="fa-solid fa-boxes-stacked"></i><span>สต็อก</span></a>
+    </div>
+</nav>
+
+<!-- FAB (mobile add button) -->
+<button class="fab" onclick="openModal()">
+    <i class="fa-solid fa-plus text-white text-xl"></i>
+</button>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal-box">
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <p class="section-label mb-1">Mechanization</p>
+                <h2 class="text-xl font-black eng" style="color:var(--text-primary)">บันทึกงานใหม่</h2>
+            </div>
+            <button onclick="closeModalDirect()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all" style="color:var(--text-muted)">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+                <label class="form-label">Week</label>
+                <input id="fWeek" type="number" min="1" max="52" class="form-input" placeholder="เลขสัปดาห์ เช่น 23">
+            </div>
+            <div class="col-span-2">
+                <label class="form-label">ชื่อพนักงาน</label>
+                <select id="fStaff" class="form-select">
+                    <option value="">— เลือกพนักงาน —</option>
+                    <option>Sangkom</option><option>Chayanon</option><option>Somkuan</option>
+                    <option>Siravit</option><option>Wongskorn</option><option>Sing</option>
+                    <option>Pipat</option><option>Aphichart</option><option>Pavarat</option>
+                    <option>Parinya</option><option>Jatuporn</option><option>Wuttipong</option>
+                    <option>Chantapol</option>
+                </select>
+            </div>
+            <div class="col-span-2">
+                <label class="form-label">Project</label>
+                <input id="fProject" type="text" class="form-input" placeholder="ชื่อ Project...">
+            </div>
+            <div class="col-span-2">
+                <label class="form-label">รายละเอียดงาน</label>
+                <input id="fDetail" type="text" class="form-input" placeholder="อธิบายงานที่ทำ...">
+            </div>
+            <div class="col-span-2">
+                <label class="form-label">มอบหมายโดย</label>
+                <select id="fAssign" class="form-select">
+                    <option value="">— เลือก —</option>
+                    <option>Sing</option><option>Pavarat</option><option>Siravit</option>
+                    <option>Sangkom</option><option>Chayanon</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">กำหนดแล้วเสร็จ</label>
+                <input id="fDueDate" type="date" class="form-input">
+            </div>
+            <div>
+                <label class="form-label">วันที่แล้วเสร็จจริง</label>
+                <input id="fActualDate" type="date" class="form-input">
+            </div>
+            <div class="col-span-2">
+                <label class="form-label">สถานะ</label>
+                <select id="fStatus" class="form-select">
+                    <option value="Pending">Pending — รอดำเนินการ</option>
+                    <option value="Complete">Complete — เสร็จแล้ว</option>
+                    <option value="In Progress">In Progress — กำลังทำ</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-6 flex gap-3">
+            <button onclick="closeModalDirect()" class="flex-1 py-3 rounded-xl font-semibold text-sm transition-all" style="background:var(--bg-thead);color:var(--text-secondary)">ยกเลิก</button>
+            <button onclick="submitForm()" id="submitBtn" class="flex-1 py-3 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-all shadow-lg shadow-green-500/20">
+                <i class="fa-solid fa-plus mr-2"></i>บันทึกงาน
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<main class="max-w-6xl mx-auto px-6 pb-12">
+    <!-- Header -->
+    <div class="flex justify-between items-end mb-8 fade-up header-row">
+        <div>
+            <p class="section-label mb-1">KP System · บันทึกเวลา</p>
+            <h1 class="text-2xl font-black eng page-title" style="color:var(--text-primary)">Work Records</h1>
+            <p class="text-sm mt-1" style="color:var(--text-muted)" id="loadStatus">กำลังโหลด...</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="relative w-56 search-wrap">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs" style="color:var(--text-muted)"></i>
+                <input type="text" id="workSearch" onkeyup="filterData()" placeholder="ค้นหาพนักงาน / งาน..."
+                    class="w-full border rounded-xl py-2 pl-9 pr-4 text-sm transition-all">
+            </div>
+            <button onclick="openModal()" class="add-btn-desktop flex items-center gap-2 bg-green-500 text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-green-600 transition-all shadow-lg shadow-green-500/25">
+                <i class="fa-solid fa-plus"></i> ลงงาน
+            </button>
+        </div>
+    </div>
+
+    <!-- Desktop Table -->
+    <div class="glass-card fade-up work-table-wrap">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left work-table">
+                <thead>
+                    <tr>
+                        <th class="text-center">Week</th>
+                        <th>พนักงาน</th>
+                        <th>Project</th>
+                        <th>รายละเอียดงาน</th>
+                        <th class="text-center">มอบหมายโดย</th>
+                        <th class="text-center">กำหนดแล้วเสร็จ</th>
+                        <th class="text-center">วันที่แล้วเสร็จจริง</th>
+                        <th class="text-center">สถานะ</th>
+                    </tr>
+                </thead>
+                <tbody id="workTableBody">
+                    <tr><td colspan="8" class="p-20 text-center" style="color:var(--text-muted)">กำลังโหลด...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Mobile Cards -->
+    <div class="work-cards" id="workCards">
+        <div class="work-card">
+            <div class="p-8 text-center" style="color:var(--text-muted)">กำลังโหลด...</div>
+        </div>
+    </div>
+</main>
+
+<script>
+const sheetID   = "1UxmUNVVnq-R16c14SWFjMRI7lQviYkZYB44SH5qlj3A";
+const sheetName = "Plan L3";
+const readURL   = `https://opensheet.elk.sh/${sheetID}/${encodeURIComponent(sheetName)}`;
+const GAS_URL   = "https://script.google.com/macros/s/AKfycbxMoEt6VNVpt8twum9Ki4yEtrQ6Knost3mZedFC-G0Fq3RihjeOWjovLCPtXVd1cmARkA/exec";
+
+let allData = [];
+
+// ===== DARK MODE =====
+function toggleDark() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
+// Load saved theme on startup
+(function() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+})();
+
+// ===== LOAD DATA =====
+async function loadWorkData() {
+    const status = document.getElementById("loadStatus");
+    try {
+        const res  = await fetch(readURL);
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error("ข้อมูลดิบไม่ได้อยู่ในรูปแบบที่ถูกต้อง");
+
+        allData = data.filter(r => {
+            const thaiName = r['ชื่อพนักงาน'];
+            const engName  = r['employeeName'];
+            return (typeof thaiName === 'string' && thaiName.trim() !== "") ||
+                   (typeof engName === 'string' && engName.trim() !== "");
+        });
+
+        status.textContent = `โหลดสำเร็จ ${allData.length} รายการ`;
+        renderTable(allData);
+        renderCards(allData);
+    } catch(e) {
+        status.textContent = "⚠️ เชื่อมต่อไม่สำเร็จ";
+        document.getElementById("workTableBody").innerHTML =
+            `<tr><td colspan="8" class="p-20 text-center" style="color:var(--text-muted)">เชื่อมต่อไม่สำเร็จ: ${e.message}</td></tr>`;
+        document.getElementById("workCards").innerHTML =
+            `<div class="work-card"><div class="p-8 text-center" style="color:var(--text-muted)">เชื่อมต่อไม่สำเร็จ</div></div>`;
+    }
+}
+
+// ===== RENDER TABLE (Desktop) =====
+function renderTable(data) {
+    const tbody = document.getElementById("workTableBody");
+    tbody.innerHTML = "";
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-20 text-center" style="color:var(--text-muted)">ไม่มีข้อมูล</td></tr>`;
+        return;
+    }
+    data.forEach(row => {
+        const week      = row['Week'] || row['week'] || "";
+        const staff     = row['ชื่อพนักงาน'] || row['employeeName'] || "";
+        const project   = row['Project'] || row['project'] || "";
+        const detail    = row['รายละเอียดงาน'] || row['taskDetail'] || "";
+        const assign    = row['มอบหมายโดย'] || row['assignedBy'] || "";
+        const dateStart = row['กำหนดแล้วเสร็จ'] || row['dueDate'] || "";
+        const dateEnd   = row['วันที่แล้วเสร็จจริง'] || row['actualDate'] || "";
+        const statusVal = String(row['Status'] || row['status'] || "Pending");
+        const { cls } = getStatus(statusVal);
+        tbody.innerHTML += `
+            <tr>
+                <td class="text-center text-xs font-bold" style="color:var(--text-muted)">${week}</td>
+                <td class="font-bold text-sm" style="color:var(--text-primary)">${staff}</td>
+                <td class="text-sm font-semibold" style="color:var(--text-primary)">${project}</td>
+                <td class="text-sm" style="color:var(--text-secondary)">${detail}</td>
+                <td class="text-center text-sm" style="color:var(--text-secondary)">${assign}</td>
+                <td class="text-center text-xs font-bold" style="color:var(--text-muted)">${dateStart}</td>
+                <td class="text-center text-xs font-bold" style="color:var(--text-muted)">${dateEnd}</td>
+                <td class="text-center"><span class="status-badge ${cls}">${statusVal}</span></td>
+            </tr>`;
+    });
+}
+
+// ===== RENDER CARDS (Mobile) =====
+function renderCards(data) {
+    const container = document.getElementById("workCards");
+    container.innerHTML = "";
+    if (data.length === 0) {
+        container.innerHTML = `<div class="work-card"><div class="p-8 text-center" style="color:var(--text-muted)">ไม่มีข้อมูล</div></div>`;
+        return;
+    }
+    data.forEach(row => {
+        const week      = row['Week'] || row['week'] || "—";
+        const staff     = row['ชื่อพนักงาน'] || row['employeeName'] || "—";
+        const project   = row['Project'] || row['project'] || "—";
+        const detail    = row['รายละเอียดงาน'] || row['taskDetail'] || "—";
+        const assign    = row['มอบหมายโดย'] || row['assignedBy'] || "—";
+        const dateStart = row['กำหนดแล้วเสร็จ'] || row['dueDate'] || "—";
+        const dateEnd   = row['วันที่แล้วเสร็จจริง'] || row['actualDate'] || "—";
+        const statusVal = String(row['Status'] || row['status'] || "Pending");
+        const { cls } = getStatus(statusVal);
+
+        const card = document.createElement('div');
+        card.className = 'work-card';
+        card.innerHTML = `
+            <div class="work-card-header">
+                <div>
+                    <div class="text-base font-bold" style="color:var(--text-primary)">${staff}</div>
+                    <div class="text-sm font-semibold mt-0.5" style="color:var(--green)">${project}</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="week-badge">W${week}</span>
+                    <span class="status-badge ${cls}">${statusVal}</span>
+                </div>
+            </div>
+            <div class="work-card-body">
+                <div class="work-card-field">
+                    <label>มอบหมายโดย</label>
+                    <span>${assign}</span>
+                </div>
+                <div class="work-card-field">
+                    <label>กำหนดเสร็จ</label>
+                    <span>${dateStart}</span>
+                </div>
+                <div class="work-card-field">
+                    <label>เสร็จจริง</label>
+                    <span>${dateEnd}</span>
+                </div>
+                <div class="work-card-detail">
+                    <label class="form-label" style="margin-bottom:4px">รายละเอียดงาน</label>
+                    <div class="text-sm" style="color:var(--text-secondary)">${detail}</div>
+                </div>
+            </div>`;
+        container.appendChild(card);
+    });
+}
+
+// ===== STATUS HELPER =====
+function getStatus(statusVal) {
+    const v = statusVal.toLowerCase();
+    let cls = "status-pending";
+    if (v.includes("complete") || v.includes("complate") || v.includes("done")) cls = "status-done";
+    else if (v.includes("progress")) cls = "status-urgent";
+    return { cls };
+}
+
+// ===== SUBMIT FORM =====
+// ====== ค้นหาบรรทัดนี้ในไฟล์ของคุณ ======
+async function submitForm() {
+    const week       = document.getElementById('fWeek').value.trim();
+    const staff      = document.getElementById('fStaff').value;
+    const project    = document.getElementById('fProject').value.trim();
+    const detail     = document.getElementById('fDetail').value.trim();
+    const assign     = document.getElementById('fAssign').value;
+    const dueDate    = document.getElementById('fDueDate').value;
+    const actualDate = document.getElementById('fActualDate').value;
+    const status     = document.getElementById('fStatus').value;
+
+    if (!staff || !project) { showToast('⚠️ กรุณากรอกชื่อพนักงานและ Project'); return; }
+
+    const payload = { nowWeek: "", week, employeeName: staff, project, taskDetail: detail, assignedBy: assign, dueDate, actualDate, status };
+    const btn = document.getElementById('submitBtn');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังบันทึก...';
+    btn.disabled = true;
+
+    // 🌟 🛠️ เริ่มแก้ไขตั้งแต่ตรงนี้ลงไปครับ 🌟
+    try {
+        const response = await fetch(GAS_URL, { 
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'text/plain;charset=utf-8' 
+            }, 
+            body: JSON.stringify(payload) 
+        });
+        
+        showToast('✅ บันทึกงานสำเร็จ!');
+        closeModalDirect();
+        
+        // หน่วงเวลา 1.5 วินาทีแล้วโหลดข้อมูลตารางใหม่ทันที
+        setTimeout(() => {
+            loadWorkData();
+        }, 1500);
+
+    } catch(e) {
+        showToast('❌ บันทึกไม่สำเร็จ: ' + e.message);
+    } finally {
+        btn.innerHTML = '<i class="fa-solid fa-plus mr-2"></i>บันทึกงาน';
+        btn.disabled = false;
+    }
+}
+
+// ===== UI HELPERS =====
+function openModal() {
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60000;
+    const localToday = new Date(now.getTime() - offsetMs).toISOString().split('T')[0];
+    const tempDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startYear = new Date(tempDate.getFullYear(), 0, 1);
+    const diffDays = Math.floor((tempDate - startYear) / 86400000);
+    const weekNumber = Math.ceil((diffDays + startYear.getDay() + 1) / 7);
+
+    document.getElementById('fWeek').value       = weekNumber;
+    document.getElementById('fDueDate').value    = localToday;
+    document.getElementById('fActualDate').value = "";
+    document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModalDirect() { document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModal(e) { if (e.target === document.getElementById('modalOverlay')) closeModalDirect(); }
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function filterData() {
+    const q = document.getElementById("workSearch").value.toLowerCase().trim();
+    const filtered = allData.filter(r => {
+        const staff   = String(r['ชื่อพนักงาน'] || r['employeeName'] || "").toLowerCase();
+        const project = String(r['Project'] || r['project'] || "").toLowerCase();
+        return staff.includes(q) || project.includes(q);
+    });
+    renderTable(filtered);
+    renderCards(filtered);
+}
+
+window.onload = loadWorkData;
+</script>
+</body>
+</html>

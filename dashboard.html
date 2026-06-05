@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | MECH DEPT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700;900&family=Sarabun:wght@300;400;500;600;700&display=swap');
+        
+        /* ===== THEME VARIABLES (มาตรฐานเดียวกับทั้งโปรเจกต์ คุมโทน Black & White / Green เกรดวิศวกรรม) ===== */
+        :root { 
+            --bg: #ffffff;
+            --bg-card: #ffffff;
+            --bg-nav: #ffffff;
+            --bg-hover: rgba(0, 0, 0, 0.05);
+            --border: #e2e8f0;
+            --text-primary: #000000;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.02);
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.05);
+            --grid-color: rgba(34, 197, 94, 0.08);
+            --chart-grid: #f1f5f9;
+        }
+        [data-theme="dark"] {
+            --bg: #000000;
+            --bg-card: #000000;
+            --bg-nav: #000000;
+            --bg-hover: rgba(255, 255, 255, 0.1);
+            --border: #222222;
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --text-muted: #888888;
+            --shadow-card: 0 4px 20px rgba(0,0,0,0.5);
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.8);
+            --grid-color: rgba(34, 197, 94, 0.15);
+            --chart-grid: #222222;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            background-color: var(--bg); 
+            color: var(--text-primary); 
+            font-family: 'Sarabun', sans-serif; 
+            padding-top: 100px;
+            margin: 0; 
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .eng { font-family: 'Chakra Petch', sans-serif; }
+
+        /* Engineering Grid Background */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: -1;
+            background-image: radial-gradient(var(--text-primary) 0.5px, transparent 0.5px);
+            background-size: 30px 30px;
+            opacity: 0.05;
+        }
+        [data-theme="dark"] .bg-grid {
+            background-image: radial-gradient(#22c55e 0.5px, transparent 0.5px);
+            opacity: 0.1;
+        }
+
+        /* ===== DARK MODE TOGGLE ===== */
+        .dark-toggle {
+            position: fixed; top: 22px; right: 20px; width: 45px; height: 45px;
+            background: var(--bg-card); border-radius: 0px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2100; box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            cursor: pointer; transition: transform .2s, background .3s;
+        }
+        .dark-toggle:hover { transform: scale(1.05); }
+        .dark-toggle .icon-sun  { display: none; }
+        .dark-toggle .icon-moon { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-sun  { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-moon { display: none; }
+
+        /* ===== TOP NAV BAR (DESKTOP) ===== */
+        .top-nav-bar {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+            background: var(--bg-nav); height: 60px; padding: 0 8px; border-radius: 0px;
+            display: flex; align-items: center; gap: 5px; z-index: 2000;
+            box-shadow: var(--shadow-nav); width: fit-content; min-width: 580px;
+            border: 1px solid var(--border); transition: background .3s, border .3s;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 8px; color: var(--text-secondary);
+            text-decoration: none; font-weight: 500; padding: 10px 15px;
+            border-radius: 0px; font-size: 13px; font-family: 'Sarabun', sans-serif;
+            transition: all .2s; white-space: nowrap;
+        }
+        .nav-item:hover { background: var(--bg-hover); }
+        .nav-item.active { background: var(--text-primary); color: var(--bg); font-weight: bold; }
+
+        /* ===== BOTTOM NAV (MOBILE) ===== */
+        .bottom-nav {
+            display: none;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--bg-nav); border-top: 1px solid var(--border);
+            z-index: 2000; padding: 8px 0 env(safe-area-inset-bottom, 8px);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            transition: background .3s;
+        }
+        .bottom-nav-inner {
+            display: flex; justify-content: space-around; align-items: center;
+        }
+        .bnav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            color: var(--text-muted); text-decoration: none;
+            font-size: 10px; font-family: 'Sarabun', sans-serif;
+            padding: 6px 12px; transition: all .2s; min-width: 56px;
+        }
+        .bnav-item i { font-size: 18px; }
+        .bnav-item.active { color: var(--text-primary); font-weight: bold; }
+
+        /* ===== BRUTALISM STAT CARD ===== */
+        .stat-card { 
+            background: var(--bg-card); border: 1px solid var(--border); 
+            border-radius: 0px; transition: all 0.3s ease;
+            position: relative; overflow: hidden;
+        }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-card); }
+        .accent-line { position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: #22c55e; }
+        .stat-value { font-size: 2.8rem; font-weight: 800; line-height: 1; letter-spacing: -1px; font-family: 'Chakra Petch', sans-serif; }
+        
+        .section-label { font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
+
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        .fade-up { animation: fadeUp .4s ease forwards; }
+
+        /* ===== RESPONSIVE BREAKPOINTS ===== */
+        @media (max-width: 768px) {
+            body { padding-top: 20px; padding-bottom: 80px; }
+            .top-nav-bar { display: none !important; }
+            .bottom-nav { display: block; }
+            .header-row { flex-direction: column; text-align: center; gap: 16px; align-items: center !important; }
+            .header-row .text-right { text-align: center !important; }
+            .dark-toggle { top: 12px; right: 16px; width: 38px; height: 38px; }
+            .chart-grid { grid-template-columns: 1fr !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+
+    <button class="dark-toggle" onclick="toggleDark()" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon text-base icon-moon"></i>
+        <i class="fa-solid fa-sun text-base icon-sun"></i>
+    </button>
+
+    <nav class="top-nav-bar">
+        <a href="index.html" class="nav-item"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
+        <a href="dashboard.html" class="nav-item active"><i class="fa-solid fa-chart-line"></i><span>สรุปสต็อก</span></a>
+        <a href="dashboard-work.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
+        <a href="working-time.html" class="nav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
+        <a href="inventory-select.html" class="nav-item"><i class="fa-solid fa-boxes-stacked"></i><span>จัดการสต็อก</span></a>
+        <div class="w-px h-6 bg-slate-300 self-center mx-2 opacity-40"></div>
+        <a href="#" onclick="handleLogout()" class="text-red-500 hover:opacity-70 p-2 transition-all"><i class="fa-solid fa-power-off"></i></a>
+    </nav>
+
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <a href="index.html" class="bnav-item"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
+            <a href="dashboard.html" class="bnav-item active"><i class="fa-solid fa-chart-line"></i><span>สต็อก</span></a>
+            <a href="dashboard-work.html" class="bnav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
+            <a href="working-time.html" class="bnav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
+            <a href="#" onclick="handleLogout()" class="bnav-item text-red-500"><i class="fa-solid fa-power-off"></i><span>ออก</span></a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6 md:p-10 fade-up">
+        <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4 header-row">
+            <div>
+                <span class="section-label block mb-1">System Intelligence</span>
+                <h1 class="text-4xl font-black uppercase tracking-tighter italic eng text-[var(--text-primary)]">Inventory <span class="text-green-600">Dashboard</span></h1>
+                <p class="text-sm font-medium" style="color:var(--text-muted)">ภาพรวมคลังสินค้าและสถิติการใช้งานระบบ</p>
+            </div>
+            <div class="text-right">
+                <p class="section-label mb-1">Data Update</p>
+                <p id="updateStatus" class="text-xs font-bold text-green-600 flex items-center md:justify-end gap-2 eng">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-600"></span>
+                    </span>
+                    REAL-TIME CONNECTED
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div class="stat-card p-8">
+                <div class="accent-line"></div>
+                <p class="section-label mb-2">Total SKU Items</p>
+                <div id="totalItems" class="stat-value" style="color:var(--text-primary)">---</div>
+                <p class="text-xs mt-3 font-semibold underline decoration-green-500 decoration-2" style="color:var(--text-muted)">จำนวนรายการทั้งหมด</p>
+            </div>
+            
+            <div class="stat-card p-8">
+                <div class="accent-line" style="background: #ef4444;"></div>
+                <p class="section-label mb-2" style="color:#ef4444">Low Stock Alert</p>
+                <div id="lowStock" class="stat-value text-red-500">---</div>
+                <p class="text-xs mt-3 font-semibold" style="color:var(--text-muted)">สินค้าใกล้หมด (น้อยกว่าหรือเท่ากับ 5)</p>
+            </div>
+
+            <div class="stat-card p-8">
+                <div class="accent-line" style="background: #3b82f6;"></div>
+                <p class="section-label mb-2" style="color:#3b82f6">Total Units</p>
+                <div id="totalQty" class="stat-value text-blue-600">---</div>
+                <p class="text-xs mt-3 font-semibold" style="color:var(--text-muted)">จำนวนชิ้นรวมทุกรายการ</p>
+            </div>
+
+            <div class="stat-card p-8 bg-[var(--text-primary)] border-none shadow-xl">
+                <div class="accent-line" style="background: var(--bg);"></div>
+                <p class="section-label mb-2" style="color:var(--text-muted)">Warehouse Node</p>
+                <div class="text-2xl font-black py-4 flex items-center gap-3 eng" style="color:var(--bg)">
+                    <i class="fa-solid fa-microchip text-green-500"></i>
+                    KP SYSTEM
+                </div>
+                <p class="text-[10px] text-green-400 font-bold tracking-widest eng">STATUS: ACTIVE</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 chart-grid">
+            <div class="stat-card p-8 lg:col-span-5">
+                <h3 class="text-sm font-bold uppercase mb-8 flex items-center gap-2 border-l-4 border-green-500 pl-3 eng" style="color:var(--text-primary)">
+                    สัดส่วนสินค้าในสต็อก <span class="text-[10px] font-normal" style="color:var(--text-muted)">(Stock Ratio)</span>
+                </h3>
+                <div class="h-[320px]"><canvas id="statusChart"></canvas></div>
+            </div>
+            <div class="stat-card p-8 lg:col-span-7">
+                <h3 class="text-sm font-bold uppercase mb-8 flex items-center gap-2 border-l-4 border-blue-500 pl-3 eng" style="color:var(--text-primary)">
+                    5 หมวดหมู่ที่มีจำนวนสูงสุด <span class="text-[10px] font-normal" style="color:var(--text-muted)">(Top 5 Categories)</span>
+                </h3>
+                <div class="h-[320px]"><canvas id="categoryChart"></canvas></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ระบบความปลอดภัย
+        if (sessionStorage.getItem("isLoggedIn") !== "true") { window.location.href = "login.html"; }
+        function handleLogout() { sessionStorage.clear(); window.location.href = "login.html"; }
+
+        // ===== ENGINE DARK MODE (ไร้รอยต่อ 100%) =====
+        function toggleDark() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            // โหลดกราฟใหม่ทันทีเพื่ออัปเดตสีตัวหนังสือและเส้นตารางบนฟอนต์กราฟ
+            loadDashboard(); 
+        }
+
+        (function() {
+            const saved = localStorage.getItem('theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+
+        // คอนฟิก ID ของ Google Sheet
+        const id1 = "1ZaWf8sYX0wC7ege0evyj9R2EIsA5nUOROprzCPdscmE";
+        const name1 = "KP_25";
+        const id2 = "1wKEYLTXcg7LCwo4qFpVXUgA4WNyRGIGDeQocqu-7KjU";
+        const name2 = "KP_R1";
+
+        let statusChartObj = null;
+        let categoryChartObj = null;
+
+        async function fetchData(id, sheetName) {
+            const url = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+            const res = await fetch(url);
+            const text = await res.text();
+            const json = JSON.parse(text.substr(47).slice(0, -2));
+            
+            const cols = json.table.cols.map(c => (c.label || "").toLowerCase().trim());
+            const totalIdx = cols.indexOf("total");
+            const catIdx = cols.indexOf("category");
+
+            return json.table.rows
+                .filter(row => row.c && row.c[0] && row.c[0].v !== null && String(row.c[0].v).trim() !== "") // คัดกรองแถวว่างออก
+                .map(row => ({
+                    Total: (totalIdx !== -1 && row.c[totalIdx]) ? (Number(row.c[totalIdx].v) || 0) : 0,
+                    Category: (catIdx !== -1 && row.c[catIdx]) ? (row.c[catIdx].v || "ไม่ระบุ") : "ไม่ระบุ"
+                }));
+        }
+
+        async function loadDashboard() {
+            try {
+                const [data1, data2] = await Promise.all([fetchData(id1, name1), fetchData(id2, name2)]);
+                const combinedData = [...data1, ...data2];
+                let lowStock = 0, totalUnits = 0, catMap = {};
+
+                combinedData.forEach(item => {
+                    totalUnits += item.Total;
+                    if(item.Total <= 5) lowStock++;
+                    catMap[item.Category] = (catMap[item.Category] || 0) + item.Total;
+                });
+
+                document.getElementById("totalItems").innerText = combinedData.length.toLocaleString();
+                document.getElementById("lowStock").innerText = lowStock.toLocaleString();
+                document.getElementById("totalQty").innerText = totalUnits.toLocaleString();
+
+                renderCharts(combinedData, catMap);
+            } catch (e) {
+                console.error("Error:", e);
+                document.querySelectorAll('.stat-value').forEach(el => el.innerText = "ERR");
+            }
+        }
+
+        function renderCharts(data, catMap) {
+            const low = data.filter(i => i.Total <= 5).length;
+            const med = data.filter(i => i.Total > 5 && i.Total <= 20).length;
+            const good = data.filter(i => i.Total > 20).length;
+
+            // ดึงค่าสีปัจจุบันจาก CSS Variables มาป้อนให้ Chart.js เพื่อปรับสีกราฟตามธีม
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const textColor = currentTheme === 'dark' ? '#ffffff' : '#000000';
+            const gridColor = currentTheme === 'dark' ? '#222222' : '#f1f5f9';
+
+            Chart.defaults.font.family = "'Chakra Petch', sans-serif";
+            Chart.defaults.color = textColor; // ปรับสีตัวอักษรรอบกราฟทั้งหมด
+
+            // 1. STATUS CHART (Doughnut)
+            if(statusChartObj) statusChartObj.destroy();
+            statusChartObj = new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['วิกฤต (0-5)', 'ต้องเติม (6-20)', 'เพียงพอ (>20)'],
+                    datasets: [{ 
+                        data: [low, med, good], 
+                        backgroundColor: ['#ef4444', '#f59e0b', '#22c55e'], 
+                        borderWidth: 4, 
+                        borderColor: currentTheme === 'dark' ? '#000000' : '#ffffff'
+                    }]
+                },
+                options: { 
+                    cutout: '70%', 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { 
+                            position: 'bottom',
+                            labels: { color: textColor }
+                        } 
+                    } 
+                }
+            });
+
+            // 2. CATEGORY CHART (Bar)
+            const topCats = Object.entries(catMap).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            if(categoryChartObj) categoryChartObj.destroy();
+            categoryChartObj = new Chart(document.getElementById('categoryChart'), {
+                type: 'bar',
+                data: {
+                    labels: topCats.map(x => x[0]),
+                    datasets: [{ 
+                        label: 'จำนวนรวม (ชิ้น)', 
+                        data: topCats.map(x => x[1]), 
+                        backgroundColor: currentTheme === 'dark' ? '#ffffff' : '#3b82f6', 
+                        borderRadius: 0 // ทรงเหลี่ยม Brutalism แบบวิศวกรรม
+                    }]
+                },
+                options: { 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: gridColor },
+                            ticks: { color: textColor }
+                        }, 
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: textColor }
+                        } 
+                    }, 
+                    plugins: { legend: { display: false } } 
+                }
+            });
+        }
+
+        window.onload = loadDashboard;
+        setInterval(loadDashboard, 60000); // อัปเดตข้อมูลอัตโนมัติทุกๆ 1 นาที
+    </script>
+</body>
+</html>

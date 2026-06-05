@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Detail System | KP_R1 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&display=swap');
+        
+        /* ===== THEME VARIABLES (เชื่อมระบบธีมกลางคงสไตล์เดิม) ===== */
+        :root { 
+            --bg-body: #f8fafc; 
+            --text-main: #1e293b; 
+            --card-bg: #ffffff;
+            --border-color: #f1f5f9;
+            --nav-bg: #ffffff;
+            --input-bg: #f8fafc;
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.05);
+            --modal-overlay: rgba(15, 23, 42, 0.7);
+        }
+        [data-theme="dark"] {
+            --bg-body: #0a0a0a; 
+            --text-main: #f1f5f9; 
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --nav-bg: #111827;
+            --input-bg: #1f2937;
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.5);
+            --modal-overlay: rgba(0, 0, 0, 0.85);
+        }
+
+        body { 
+            background: var(--bg-body); 
+            color: var(--text-main); 
+            font-family: 'Chakra Petch', sans-serif; 
+            padding-top: 110px; 
+            transition: background 0.3s, color 0.3s;
+            min-height: 100vh;
+        }
+
+        /* ===== DARK MODE TOGGLE ปุ่มสลับธีมมุมขวา ===== */
+        .dark-toggle {
+            position: fixed; top: 22px; right: 20px; width: 45px; height: 45px;
+            background: var(--card-bg); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2100; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            cursor: pointer; transition: transform .2s, background .3s;
+        }
+        .dark-toggle:hover { transform: scale(1.05); }
+        .dark-toggle .icon-sun  { display: none; }
+        .dark-toggle .icon-moon { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-sun  { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-moon { display: none; }
+
+        /* ปุ่ม Back */
+        .back-btn {
+            position: fixed; top: 22px; left: 20px;
+            width: 45px; height: 45px; background: var(--card-bg);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            z-index: 2100; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color); color: var(--text-main);
+        }
+
+        /* Nav Bar - ปรับให้สอดคล้องกับหน้าอื่นๆ */
+        .top-nav-bar {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+            background: var(--nav-bg); height: 60px; padding: 0 8px; border-radius: 18px;
+            display: flex; align-items: center; gap: 5px;
+            z-index: 2000; box-shadow: var(--shadow-nav);
+            width: fit-content; max-width: 95%; border: 1px solid var(--border-color);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .nav-item {
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; color: #64748b; text-decoration: none; font-weight: 500;
+            padding: 8px 12px; border-radius: 10px; transition: 0.3s; font-size: 13px;
+        }
+        [data-theme="dark"] .nav-item { color: #9ca3af; }
+        [data-theme="dark"] .nav-item:hover { color: #ffffff; }
+        .nav-item.active { background: #22c55e; color: white !important; }
+
+        /* Card ดีไซน์เดิมของคุณคงไว้เป๊ะๆ */
+        .tool-card {
+            background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border-color);
+            overflow: hidden; cursor: pointer; transition: 0.3s; height: 100%;
+        }
+        .tool-card:hover { transform: translateY(-5px); border-color: #22c55e; }
+
+        /* MODAL ควบคุมระยะความสูงแนวตั้ง */
+        #itemModal {
+            display: none; position: fixed; inset: 0; z-index: 3000;
+            background: var(--modal-overlay); backdrop-filter: blur(8px);
+            align-items: center; justify-content: center; padding: 15px;
+        }
+
+        .modal-body {
+            background: var(--card-bg); border-radius: 24px; width: 100%; max-width: 500px;
+            max-height: 85vh; border: 1px solid var(--border-color);
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-scroll-area {
+            overflow-y: auto; padding: 0 24px 24px 24px; flex: 1;
+        }
+
+        .form-input {
+            width: 100%; border: 2px solid var(--border-color); border-radius: 12px;
+            padding: 10px; outline: none; background: var(--input-bg); color: var(--text-main); font-size: 14px;
+        }
+        .form-input:focus { border-color: #22c55e; background: var(--card-bg); }
+
+        /* ===== BOTTOM NAV (MOBILE) ===== */
+        .bottom-nav {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--nav-bg); border-top: 1px solid var(--border-color);
+            z-index: 2000; padding: 8px 0 env(safe-area-inset-bottom, 8px);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08); transition: background .3s;
+        }
+        .bottom-nav-inner { display: flex; justify-content: space-around; align-items: center; }
+        .bnav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            color: #64748b; text-decoration: none; font-size: 10px; padding: 6px 12px; min-width: 56px;
+        }
+        .bnav-item i { font-size: 18px; }
+        .bnav-item.active { color: #22c55e; font-weight: bold; }
+
+        @media (max-width: 768px) {
+            body { padding-top: 20px; padding-bottom: 80px; }
+            .top-nav-bar { display: none !important; }
+            .bottom-nav { display: block; }
+            .back-btn { top: 12px; left: 16px; width: 38px; height: 38px; }
+            .dark-toggle { top: 12px; right: 16px; width: 38px; height: 38px; }
+            .flex-col-mobile { flex-direction: column !important; align-items: stretch !important; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="javascript:history.back()" class="back-btn"><i class="fa-solid fa-chevron-left"></i></a>
+
+    <button class="dark-toggle" onclick="toggleDark()" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon text-base icon-moon"></i>
+        <i class="fa-solid fa-sun text-base icon-sun"></i>
+    </button>
+
+    <nav class="top-nav-bar">
+        <a href="index.html" class="nav-item"><i class="fa-solid fa-house"></i> <span>หน้าแรก</span></a>
+        <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-chart-line"></i> <span>สรุปข้อมูล</span></a>
+        <a href="working-time.html" class="nav-item"><i class="fa-solid fa-user-clock"></i> <span>บันทึกเวลา</span></a>
+        <a href="#" class="nav-item active"><i class="fa-solid fa-boxes-stacked"></i> <span>จัดการสต็อก</span></a>
+        <button onclick="handleLogout()" class="nav-item text-red-500"><i class="fa-solid fa-power-off"></i></button>
+    </nav>
+
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <a href="index.html" class="bnav-item"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
+            <a href="dashboard.html" class="bnav-item"><i class="fa-solid fa-chart-line"></i><span>สถิติ</span></a>
+            <a href="working-time.html" class="bnav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
+            <a href="#" class="bnav-item active"><i class="fa-solid fa-boxes-stacked"></i><span>คลัง</span></a>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between gap-4 mb-8 flex-col-mobile">
+            <div class="relative flex-1 max-w-lg">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="searchInput" placeholder="ค้นหาชื่อหรือ MatCode..." 
+                       class="w-full bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl py-3 pl-12 pr-4 outline-none focus:border-green-500 shadow-sm text-base">
+            </div>
+            <div class="bg-[var(--card-bg)] px-6 py-3 rounded-2xl border-l-4 border-green-500 shadow-sm border border-y-[var(--border-color)] border-r-[var(--border-color)] flex items-center gap-3">
+                <span class="text-2xl font-black" id="countItems">0</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Total Items</span>
+            </div>
+        </div>
+
+        <div id="cardsContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-12"></div>
+    </div>
+
+    <div id="itemModal">
+        <div class="modal-body">
+            <div class="h-48 shrink-0 bg-slate-500/10 relative p-4 flex items-center justify-center">
+                <img id="mImg" class="max-w-full max-h-full object-contain">
+                <button onclick="closeModal()" class="absolute top-3 right-3 w-8 h-8 bg-black/20 hover:bg-black/40 text-white rounded-full">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-scroll-area">
+                <div class="py-4">
+                    <p id="mTag" class="text-green-600 font-bold text-[10px] mb-1"></p>
+                    <h3 id="mTitle" class="text-xl font-black leading-tight"></h3>
+                    <p id="mCat" class="text-xs text-slate-400 mt-1 font-bold"></p>
+                </div>
+
+                <div class="space-y-4 bg-[var(--input-bg)] p-4 rounded-2xl border border-[var(--border-color)]">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 ml-1">พนักงาน</label>
+                            <select id="opName" class="form-input font-bold" onchange="hideError()"></select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 ml-1">รหัสผ่าน</label>
+                            <input type="password" id="empPassword" class="form-input" placeholder="••••" oninput="hideError()">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 ml-1">จำนวน</label>
+                            <input type="number" id="transQty" value="1" min="1" class="form-input text-center font-black text-lg">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 ml-1">ประเภท</label>
+                            <select id="transType" class="form-input font-bold text-green-600 bg-[var(--card-bg)]">
+                                <option value="OUT">(-) เบิก</option>
+                                <option value="IN">(+) คืน</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="modalError" class="hidden text-center text-red-500 font-bold text-[11px] bg-red-500/10 border border-red-500/20 py-2 rounded-xl"></div>
+
+                    <button onclick="submitData()" id="submitBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-xl text-lg shadow-lg active:scale-95 transition-all">
+                        ยืนยันบันทึกข้อมูล
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (sessionStorage.getItem("isLoggedIn") !== "true") { window.location.href = "login.html"; }
+        function handleLogout() { sessionStorage.clear(); window.location.href = "login.html"; }
+
+        // ===== THEME CONTROLLER =====
+        function toggleDark() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        (function() {
+            const saved = localStorage.getItem('theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+
+        // --- Firebase & API Config ---
+        const staffPassDB = { "ADMIN": "1234", "นายอาณัติ กิตติขจร": "1111", "นายอภิชาติ พูลทอง": "2222", "นายสมควร สายเส็ง": "3333" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqlBzXhKiGtOGx4fzKcul2gMKoJTEs968",
+            authDomain: "kp-inventory-system.firebaseapp.com",
+            databaseURL: "https://kp-inventory-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kp-inventory-system",
+            storageBucket: "kp-inventory-system.firebasestorage.app",
+            messagingSenderId: "776715886830",
+            appId: "1:776715886830:web:7e6fd0bb788113a00353ff"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const scriptURL = "https://script.google.com/macros/s/AKfycbwvjDlZFf6WV2oz-uSlsiUnavApkQBgCjxmMV4yeu31wo0UVPFeHmux6abK_wEOHcnUTaaO/exec";
+
+        let rawData = [];
+
+        // --- Data Loading ---
+        async function loadData() {
+            const sheetID = "16fddak8yZOlNFq_8nLWm7g9Fzf8iJ8KwK3TYNI9hUqk";
+            const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=Tool%20Store`;
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                const json = JSON.parse(text.substr(47).slice(0, -2));
+                
+                // ปรับเงื่อนไขดักบั๊ก: แสดงแถวทั้งหมดเพื่อไม่ให้ของหายครึ่งตู้อีกรอบ
+                rawData = json.table.rows.map((r, i) => ({
+                    id: i,
+                    category: r.c[0]?.v || "ทั่วไป",
+                    matCode: r.c[4]?.v || "No Code",
+                    name: r.c[5]?.v || "ไม่มีชื่อรายการ",
+                    photo: r.c[7]?.v || ""
+                })).filter(item => !String(item.matCode).includes("Mat.Code"));
+                
+                document.getElementById("countItems").innerText = rawData.length;
+                renderCards(rawData);
+            } catch(e) { console.error("Load Error", e); }
+        }
+
+        function renderCards(data) {
+            const container = document.getElementById("cardsContainer");
+            container.innerHTML = data.map(item => `
+                <div class="tool-card" onclick="openModal(${item.id})">
+                    <div class="h-32 md:h-40 bg-slate-50/50 flex items-center justify-center p-2">
+                        <img src="${item.photo || 'https://placehold.co/200x200?text=No+Photo'}" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <div class="p-3 border-t border-[var(--border-color)]">
+                        <p class="text-[9px] font-black text-green-600">#${item.matCode}</p>
+                        <h3 class="text-[11px] font-bold line-clamp-2 h-7 leading-tight" style="color:var(--text-main)">${item.name}</h3>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- UI Logic ---
+        function openModal(id) {
+            const item = rawData.find(x => x.id === id);
+            if(!item) return;
+            
+            document.getElementById("mImg").src = item.photo || 'https://placehold.co/400x400?text=No+Photo';
+            document.getElementById("mTag").innerText = "MATCODE: " + item.matCode;
+            document.getElementById("mTitle").innerText = item.name;
+            document.getElementById("mCat").innerText = "หมวดหมู่: " + item.category;
+            
+            document.getElementById("empPassword").value = "";
+            document.getElementById("transQty").value = "1";
+            hideError();
+            
+            window.selectedItem = item;
+            document.getElementById("itemModal").style.display = "flex";
+        }
+
+        function closeModal() { document.getElementById("itemModal").style.display = "none"; }
+        function hideError() { document.getElementById("modalError").classList.add("hidden"); }
+
+        async function submitData() {
+            const opName = document.getElementById("opName").value;
+            const password = document.getElementById("empPassword").value;
+            const qty = document.getElementById("transQty").value;
+            const type = document.getElementById("transType").value;
+            const err = document.getElementById("modalError");
+            const btn = document.getElementById("submitBtn");
+
+            if(!opName || !password) {
+                err.innerText = "❌ กรุณาเลือกชื่อและใส่รหัสผ่าน";
+                err.classList.remove("hidden");
+                return;
+            }
+            if(staffPassDB[opName] !== password) {
+                err.innerText = "❌ รหัสผ่านไม่ถูกต้อง!";
+                err.classList.remove("hidden");
+                return;
+            }
+
+            btn.disabled = true; btn.innerText = "กำลังบันทึก...";
+
+            const payload = { 
+                opName, 
+                qty: parseInt(qty), 
+                type, 
+                toolName: window.selectedItem.name, 
+                matCode: window.selectedItem.matCode,
+                store: "KP_R1",
+                adminStatus: "Pending",
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                await db.ref('all_transactions').push(payload);
+                await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                closeModal();
+                loadData();
+            } catch (e) { 
+                err.innerText = "❌ เกิดข้อผิดพลาดในการเชื่อมต่อ";
+                err.classList.remove("hidden");
+            } finally { 
+                btn.disabled = false; btn.innerText = "ยืนยันบันทึกข้อมูล"; 
+            }
+        }
+
+        // --- Search ---
+        document.getElementById("searchInput").addEventListener("input", (e) => {
+            const val = e.target.value.toLowerCase();
+            const filtered = rawData.filter(item => 
+                item.name.toLowerCase().includes(val) || 
+                String(item.matCode).toLowerCase().includes(val)
+            );
+            renderCards(filtered);
+        });
+
+        // --- Setup ---
+        const staffList = ["ADMIN", "นายอาณัติ กิตติขจร", "นายอภิชาติ พูลทอง", "นายสมควร สายเส็ง", "นายสิงห์ ร่วมรส", "นายอดิศักดิ์ เพชรนิล", "นายสมเจตน์ ไม้หอม", "นายคมสรรค์ ศรียา", "นายฉันทพล อินทสิทธิ์", "นายปริญญา สุบิน", "นายวุฒิพงษ์ เพ็ชรพราย", "นายธีรภัทร พิลึก", "นายวงศกร ระวังภัย", "นายจาตุพร ขุนพิลึก", "นายอนิรุธ เกิด"];
+        function setupOperatorDropdown() {
+            document.getElementById("opName").innerHTML = '<option value="" disabled selected>เลือกรายชื่อ...</option>' + 
+                staffList.map(name => `<option value="${name}">${name}</option>`).join('');
+        }
+
+        window.onload = () => {
+            loadData();
+            setupOperatorDropdown();
+        };
+    </script>
+</body>
+</html>

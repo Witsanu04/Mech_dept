@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Detail System | MECH DEPT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&display=swap');
+        
+        /* ===== THEME VARIABLES ===== */
+        :root { 
+            --bg-body: #f8fafc; 
+            --text-main: #1e293b; 
+            --card-bg: #ffffff;
+            --border-color: #f1f5f9;
+            --nav-bg: #ffffff;
+            --input-bg: #f8fafc;
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.05);
+            --modal-overlay: rgba(15, 23, 42, 0.6);
+        }
+        [data-theme="dark"] {
+            --bg-body: #0a0a0a; 
+            --text-main: #f1f5f9; 
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --nav-bg: #111827;
+            --input-bg: #1f2937;
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.5);
+            --modal-overlay: rgba(0, 0, 0, 0.85);
+        }
+
+        body { 
+            background: var(--bg-body); 
+            color: var(--text-main); 
+            font-family: 'Chakra Petch', sans-serif; 
+            padding-top: 110px; 
+            transition: background 0.3s, color 0.3s;
+            min-height: 100vh;
+        }
+
+        /* ===== DARK MODE TOGGLE ===== */
+        .dark-toggle {
+            position: fixed; top: 22px; right: 20px; width: 45px; height: 45px;
+            background: var(--card-bg); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2100; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            cursor: pointer; transition: transform .2s, background .3s;
+        }
+        .dark-toggle:hover { transform: scale(1.05); }
+        .dark-toggle .icon-sun  { display: none; }
+        .dark-toggle .icon-moon { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-sun  { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-moon { display: none; }
+
+        /* ปุ่ม Back ซ้ายมือบน */
+        .back-btn {
+            position: fixed; top: 22px; left: 20px;
+            width: 45px; height: 45px; background: var(--card-bg);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            z-index: 2100; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color); transition: 0.3s;
+        }
+
+        /* แถบเมนูบน */
+        .top-nav-bar {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+            background: var(--nav-bg); height: 60px; padding: 0 8px; border-radius: 18px;
+            display: flex; align-items: center; gap: 5px;
+            z-index: 2000; box-shadow: var(--shadow-nav);
+            width: fit-content; min-width: 480px; border: 1px solid var(--border-color);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .nav-item {
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; color: #64748b; text-decoration: none; font-weight: 500;
+            padding: 10px 18px; border-radius: 12px; transition: 0.3s; font-size: 14px;
+        }
+        [data-theme="dark"] .nav-item { color: #9ca3af; }
+        [data-theme="dark"] .nav-item:hover { color: #ffffff; }
+
+        .nav-item.active { 
+            background: #22c55e; 
+            color: white !important; 
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+        }
+
+        .nav-divider {
+            width: 1px; height: 24px; background: var(--border-color); margin: 0 5px;
+        }
+
+        .logout-btn {
+            color: #ef4444; width: 40px; height: 40px; 
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; transition: 0.3s;
+        }
+        .logout-btn:hover { background: #fee2e2; }
+        [data-theme="dark"] .logout-btn:hover { background: #451a1a; }
+
+        /* Card ดีไซน์เดิมของคุณ */
+        .dash-card {
+            background: var(--card-bg); border-radius: 16px; padding: 12px 20px;
+            display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-color);
+        }
+
+        .tool-card {
+            background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border-color);
+            overflow: hidden; cursor: pointer; transition: 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .tool-card:hover { transform: translateY(-5px); border-color: #22c55e; box-shadow: 0 12px 20px -5px rgba(0,0,0,0.05); }
+
+        #itemModal {
+            display: none; position: fixed; inset: 0; z-index: 3000;
+            background: var(--modal-overlay); backdrop-filter: blur(6px);
+            align-items: flex-start; justify-content: center;
+            padding: 20px 15px; overflow-y: auto;
+        }
+        .modal-body {
+            background: var(--card-bg); border-radius: 28px; width: 100%; max-width: 520px;
+            margin: auto; flex-shrink: 0; border: 1px solid var(--border-color);
+        }
+        .modal-img-wrap {
+            height: clamp(140px, 22vh, 220px);
+        }
+
+        .form-input {
+            width: 100%; border: 2px solid var(--border-color); border-radius: 12px;
+            padding: 12px; outline: none; background: var(--input-bg); color: var(--text-main); transition: 0.2s;
+        }
+        .form-input:focus { border-color: #22c55e; background: var(--card-bg); }
+
+        /* ===== BOTTOM NAV (MOBILE) ===== */
+        .bottom-nav {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--nav-bg); border-top: 1px solid var(--border-color);
+            z-index: 2000; padding: 8px 0 env(safe-area-inset-bottom, 8px);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08); transition: background .3s;
+        }
+        .bottom-nav-inner { display: flex; justify-content: space-around; align-items: center; }
+        .bnav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            color: #64748b; text-decoration: none; font-size: 10px; padding: 6px 12px; min-width: 56px;
+        }
+        .bnav-item i { font-size: 18px; }
+        .bnav-item.active { color: #22c55e; font-weight: bold; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+        .error-shake { animation: shake 0.5s; }
+
+        @media (max-width: 768px) {
+            body { padding-top: 20px; padding-bottom: 80px; }
+            .top-nav-bar { display: none !important; }
+            .bottom-nav { display: block; }
+            .back-btn { top: 12px; left: 16px; width: 38px; height: 38px; }
+            .dark-toggle { top: 12px; right: 16px; width: 38px; height: 38px; }
+            .flex-col-mobile { flex-direction: column !important; align-items: stretch !important; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="javascript:history.back()" class="back-btn">
+        <i class="fa-solid fa-chevron-left text-lg"></i>
+    </a>
+
+    <button class="dark-toggle" onclick="toggleDark()" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon text-base icon-moon"></i>
+        <i class="fa-solid fa-sun text-base icon-sun"></i>
+    </button>
+
+    <nav class="top-nav-bar">
+        <a href="index.html" class="nav-item">
+            <i class="fa-solid fa-house"></i> <span>หน้าแรก</span>
+        </a>
+        <a href="dashboard.html" class="nav-item">
+            <i class="fa-solid fa-chart-line"></i> <span>สรุปข้อมูล</span>
+        </a>
+        <a href="working-time.html" class="nav-item">
+            <i class="fa-solid fa-user-clock"></i> <span>บันทึกเวลา</span>
+        </a>
+        <a href="inventory-select.html" class="nav-item active">
+            <i class="fa-solid fa-boxes-stacked"></i> <span>จัดการสต็อก</span>
+        </a>
+        <div class="nav-divider"></div>
+        <a href="#" onclick="handleLogout()" class="logout-btn">
+            <i class="fa-solid fa-power-off"></i>
+        </a>
+    </nav>
+
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <a href="index.html" class="bnav-item"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
+            <a href="dashboard.html" class="bnav-item"><i class="fa-solid fa-chart-line"></i><span>สถิติ</span></a>
+            <a href="working-time.html" class="bnav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
+            <a href="inventory-select.html" class="bnav-item active"><i class="fa-solid fa-boxes-stacked"></i><span>คลัง</span></a>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="flex flex-col lg:flex-row justify-between items-center gap-4 mb-8 flex-col-mobile">
+            <div class="relative w-full max-w-lg">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="searchInput" onkeyup="filterData()" 
+                    placeholder="สแกน MatCode หรือ ค้นหาชื่ออุปกรณ์..." value=""
+                    class="w-full bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl py-4 pl-12 pr-6 outline-none focus:border-green-500 shadow-sm transition-all text-lg">
+            </div>
+
+            <div class="flex gap-3 w-full lg:w-auto">
+                <div class="dash-card flex-1 shadow-sm">
+                    <div>
+                        <p id="countTotal" class="text-xl font-black leading-none">0</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Total Items</p>
+                    </div>
+                </div>
+                <div class="dash-card flex-1 shadow-sm border-l-4 border-l-green-500">
+                    <div>
+                        <p id="sumTotal" class="text-xl font-black leading-none">0</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Total Stock</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="toolGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-12"></div>
+    </div>
+
+    <div id="itemModal">
+        <div class="modal-body shadow-2xl">
+            <div class="modal-img-wrap bg-slate-100 relative overflow-hidden rounded-t-[28px]">
+                <img id="mImg" class="w-full h-full object-cover">
+                <button onclick="closeModal()" class="absolute top-5 right-5 w-10 h-10 bg-black/30 hover:bg-black/50 text-white rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+
+            <div class="p-8">
+                <div class="mb-6 border-b border-[var(--border-color)] pb-6">
+                    <p id="mTag" class="text-green-600 font-black font-mono text-xs mb-1 uppercase"></p>
+                    <h3 id="mTitle" class="text-2xl font-black leading-tight"></h3>
+                    <div class="flex gap-4 mt-5">
+                        <div class="bg-[var(--input-bg)] px-4 py-2 rounded-xl flex-1 border border-[var(--border-color)]">
+                            <p class="text-[10px] text-slate-400 uppercase font-bold">Location</p>
+                            <p id="mLoc" class="font-bold text-slate-500"></p>
+                        </div>
+                        <div class="bg-green-500/10 px-4 py-2 rounded-xl flex-1 border border-green-500/20">
+                            <p class="text-[10px] text-green-500 uppercase font-bold">คงเหลือในตู้</p>
+                            <p id="mStock" class="font-bold text-green-500 text-xl"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-[var(--input-bg)] p-6 rounded-3xl border border-[var(--border-color)]">
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">พนักงาน</label>
+                                <select id="opName" class="form-input font-bold" onchange="hideError()"></select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">รหัสผ่าน</label>
+                                <input type="password" id="userPass" class="form-input" placeholder="••••" oninput="hideError()">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">จำนวน</label>
+                                <input type="number" id="transQty" value="1" min="1" class="form-input text-center font-black text-lg">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 ml-1 uppercase">ประเภทรายการ</label>
+                                <select id="transType" class="form-input font-bold text-green-600 bg-[var(--card-bg)]">
+                                    <option value="OUT">(-) เบิกอุปกรณ์</option>
+                                    <option value="IN">(+) คืนอุปกรณ์</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="modalError" class="hidden text-center text-red-500 font-bold text-xs bg-red-500/10 border border-red-500/20 py-3 rounded-xl error-shake">
+                            ❌ ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง
+                        </div>
+                        <button onclick="submitData()" id="submitBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl text-lg mt-2 shadow-lg shadow-green-200/20 transition-all active:scale-95">
+                            ยืนยันบันทึกข้อมูล
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (sessionStorage.getItem("isLoggedIn") !== "true") { window.location.href = "login.html"; }
+        function handleLogout() { sessionStorage.clear(); window.location.href = "login.html"; }
+
+        // ===== THEME CONTROLLER =====
+        function toggleDark() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        (function() {
+            const saved = localStorage.getItem('theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+
+        //ดึงชื่อไฟล์ปัจจุบันมาทำความเข้าใจคลังอัตโนมัติ
+        const currentFilename = window.location.pathname.split('/').pop().toLowerCase();
+        const detectedStore = currentFilename.includes('kpr1') ? "KP_R1" : "KP_25";
+
+        const staffPassDB = { "ADMIN": "1234", "นายอาณัติ กิตติขจร": "1111", "นายอภิชาติ พูลทอง": "2222", "นายสมควร สายเส็ง": "3333" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqlBzXhKiGtOGx4fzKcul2gMKoJTEs968",
+            authDomain: "kp-inventory-system.firebaseapp.com",
+            databaseURL: "https://kp-inventory-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kp-inventory-system",
+            storageBucket: "kp-inventory-system.firebasestorage.app",
+            messagingSenderId: "776715886830",
+            appId: "1:776715886830:web:7e6fd0bb788113a00353ff"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const url = `https://opensheet.elk.sh/1ZaWf8sYX0wC7ege0evyj9R2EIsA5nUOROprzCPdscmE/Store%20KP`;
+        
+        let rawData = [];
+        let currentItem = null;
+
+        async function loadData(){
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            // ดึงข้อมูลออกแสดงผลทั้งหมด โดยไม่ตัดแถวที่รหัส MatCode ว่างเปล่าออก
+            rawData = data; 
+            
+            document.getElementById("countTotal").innerText = rawData.length;
+            const totalStock = rawData.reduce((sum, item) => sum + (parseInt(item.Total) || 0), 0);
+            document.getElementById("sumTotal").innerText = totalStock.toLocaleString();
+            filterData();
+        }
+
+        function filterData(){
+            const grid = document.getElementById("toolGrid");
+            const search = document.getElementById("searchInput").value.toLowerCase();
+            const filtered = rawData.filter(item => (item.Description || "").toLowerCase().includes(search) || (item.MatCode || "").toLowerCase().includes(search));
+            grid.innerHTML = filtered.map((item, idx) => `
+                <div class="tool-card" onclick="openModal(${rawData.indexOf(item)})">
+                    <div class="h-44 bg-slate-50 overflow-hidden relative">
+                        <img src="${item.Picture}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/300x200?text=No+Photo'">
+                    </div>
+                    <div class="p-4">
+                        <p class="text-[10px] font-black text-green-600 mb-1">#${item.MatCode || 'No Code'}</p>
+                        <h3 class="text-sm font-bold line-clamp-2 h-10 leading-snug">${item.Description || 'ไม่มีชื่อรายการ'}</h3>
+                        <div class="mt-3 flex items-center justify-between pt-3 border-t border-[var(--border-color)]">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">${item.LOCATION || 'N/A'}</span>
+                            <span class="font-black ${parseInt(item.Total) <= 5 ? 'text-red-500' : ''}">${item.Total || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openModal(index) {
+            const item = rawData[index];
+            if(!item) return;
+            currentItem = item;
+            document.getElementById("mImg").src = item.Picture || 'https://via.placeholder.com/300x200?text=No+Photo';
+            document.getElementById("mTag").innerText = "Material Code: " + (item.MatCode || 'ไม่มีรหัส');
+            document.getElementById("mTitle").innerText = item.Description || 'ไม่มีชื่อรายการ';
+            document.getElementById("mLoc").innerText = item.LOCATION || 'ไม่ระบุ';
+            document.getElementById("mStock").innerText = (item.Total || 0) + " ชิ้น";
+            hideError();
+            document.getElementById("transQty").value = 1;
+            document.getElementById("userPass").value = "";
+            const modal = document.getElementById("itemModal");
+            modal.scrollTop = 0;
+            modal.style.display = "flex";
+            document.body.style.overflow = "hidden";
+        }
+
+        function closeModal() { 
+            document.getElementById("itemModal").style.display = "none"; 
+            document.body.style.overflow = "";
+        }
+        function hideError() { document.getElementById("modalError").classList.add("hidden"); }
+
+        async function submitData() {
+            const opName = document.getElementById("opName").value;
+            const userPass = document.getElementById("userPass").value;
+            const qty = document.getElementById("transQty").value;
+            const type = document.getElementById("transType").value;
+            const err = document.getElementById("modalError");
+
+            if(!opName || !userPass) { err.innerText = "❌ กรุณาระบุชื่อและรหัสผ่าน"; err.classList.remove("hidden"); return; }
+            if(staffPassDB[opName] !== userPass) { 
+                err.innerText = "❌ รหัสผ่านไม่ถูกต้อง!"; err.classList.remove("hidden"); 
+                err.classList.remove("error-shake"); void err.offsetWidth; err.classList.add("error-shake");
+                return; 
+            }
+
+            const btn = document.getElementById("submitBtn");
+            btn.disabled = true; btn.innerText = "กำลังบันทึก...";
+
+            try {
+                await db.ref('all_transactions').push({ 
+                    timestamp: new Date().toISOString(), 
+                    opName, 
+                    toolName: currentItem.Description || 'ไม่มีชื่อรายการ', 
+                    matCode: currentItem.MatCode || 'ไม่มีรหัส', 
+                    qty: parseInt(qty), 
+                    type, 
+                    store: detectedStore, 
+                    adminStatus: "Pending" 
+                });
+                closeModal(); loadData();
+            } catch (e) { err.innerText = "❌ การเชื่อมต่อผิดพลาด"; err.classList.remove("hidden"); }
+            finally { btn.disabled = false; btn.innerText = "ยืนยันบันทึกข้อมูล"; }
+        }
+
+        const staffList = ["ADMIN", "นายอาณัติ กิตติขจร", "นายอภิชาติ พูลทอง", "นายสมควร สายเส็ง", "นายสิงห์ ร่วมรส", "นายอดิศักดิ์ เพชรนิล", "นายสมเจตน์ ไม้หอม", "นายคมสรรค์ ศรียา", "นายฉันทพล อินทสิทธิ์", "นายปริญญา สุบิน", "นายวุฒิพงษ์ เพ็ชรพราย", "นายธีรภัทร พิลึก", "นายวงศกร ระวังภัย", "นายจาตุพร ขุนพิลึก", "นายอนิรุธ เกิด"];
+        function setupOperatorDropdown() {
+            document.getElementById("opName").innerHTML = '<option value="" disabled selected>เลือกรายชื่อ...</option>' + 
+                staffList.map(name => `<option value="${name}">${name}</option>`).join('');
+        }
+
+        window.onload = () => { 
+            loadData(); 
+            setupOperatorDropdown();
+            document.getElementById("searchInput").value = ""; 
+        };
+    </script>
+</body>
+</html>

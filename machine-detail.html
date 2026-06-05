@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | วิเคราะห์เครื่องพลิกขนมปัง #01</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Chakra+Petch:wght@500;700&display=swap');
+        body { font-family: 'Inter', 'Chakra Petch', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: white; border: 1px solid #e2e8f0; transition: all 0.2s ease; }
+        .glass-card:hover { border-color: #3b82f6; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .ai-glow { animation: glow 2s infinite alternate; }
+        @keyframes glow { from { border-color: #3b82f6; } to { border-color: #60a5fa; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); } }
+        .io-led { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    </style>
+</head>
+<body class="text-slate-900">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-[1600px] mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-900 text-white shadow-xl">
+                    <i class="fa-solid fa-gauge-high text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black italic uppercase tracking-tighter">Smart <span class="text-blue-600">Production</span> Hub</h1>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">ระบบติดตามและวินิจฉัยเครื่องจักรพลิกขนมปัง (S7-1200)</p>
+                </div>
+            </div>
+            <div id="connectionStatus" class="flex items-center gap-6">
+                <div class="text-right">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Server Status</p>
+                    <p class="text-xs font-bold text-green-600">CLOUD CONNECTED</p>
+                </div>
+                <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center border border-green-200 animate-pulse">
+                    <i class="fa-solid fa-wifi text-green-500"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1600px] mx-auto px-6 py-8">
+        
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div class="glass-card p-6 rounded-[2rem]">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">ประสิทธิภาพรวม</p>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-4xl font-black text-slate-800" id="liveEfficiency">98.2</span>
+                    <span class="text-slate-400 font-bold">%</span>
+                </div>
+                <div class="mt-4 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div id="effBar" class="h-full bg-blue-500 transition-all duration-1000" style="width: 98%"></div>
+                </div>
+            </div>
+            <div class="glass-card p-6 rounded-[2rem] border-b-4 border-blue-500">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">ยอดผลิต (วันนี้)</p>
+                <div class="text-4xl font-black text-blue-600" id="liveCount">0</div>
+                <p class="text-[10px] font-bold text-slate-400 mt-2">เป้าหมาย: 2,500 ชิ้น</p>
+            </div>
+            <div class="glass-card p-6 rounded-[2rem] bg-red-50 border-none">
+                <p class="text-[10px] font-black text-red-400 uppercase mb-1">แจ้งเตือน (Alarm)</p>
+                <div class="text-4xl font-black text-red-600" id="alarmCount">0</div>
+                <p class="text-[10px] font-bold text-red-400/60 mt-2">พบปัญหาล่าสุดที่ Step 12</p>
+            </div>
+            <div class="glass-card p-6 rounded-[2rem] bg-slate-900 border-none">
+                <p class="text-[10px] font-black text-white/40 uppercase mb-1">PLC Step (สถานะ)</p>
+                <div class="text-2xl font-black text-green-400 uppercase italic" id="stepName">READY</div>
+                <div class="flex items-center gap-2 mt-3">
+                    <span class="text-white/40 text-[10px] font-bold">Step Code:</span>
+                    <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded font-mono" id="liveStep">10</span>
+                </div>
+            </div>
+            <div class="glass-card p-6 rounded-[2rem]">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">ประมาณการรายได้</p>
+                <div class="text-3xl font-black text-slate-800"><span id="estIncome">0</span><span class="text-sm ml-1">฿</span></div>
+                <p class="text-[10px] font-bold text-green-500 mt-2">+12% จากเมื่อวาน</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-8">
+            <div class="col-span-12 lg:col-span-8 space-y-8">
+                
+                <div class="glass-card p-8 rounded-[2.5rem] ai-glow bg-gradient-to-r from-blue-50 to-white relative overflow-hidden">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="flex gap-4">
+                            <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                                <i class="fa-solid fa-robot text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-black uppercase italic tracking-tight">AI Diagnostic Assistant</h3>
+                                <p class="text-xs font-bold text-blue-500">ระบบประมวลผลความผิดปกติด้วย AI</p>
+                            </div>
+                        </div>
+                        <span class="bg-blue-100 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full">AI ONLINE</span>
+                    </div>
+                    <div id="aiAdvice" class="text-slate-600 text-sm leading-relaxed bg-white/60 p-5 rounded-2xl border border-blue-100 italic min-h-[90px]">
+                        "พร้อมวิเคราะห์ข้อมูล... หากเครื่องค้างหรือความเร็วตกลง AI จะแสดงวิธีแก้ปัญหาที่นี่"
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="glass-card p-8 rounded-[2.5rem]">
+                        <h3 class="text-sm font-black uppercase mb-6 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-blue-500"></i> อัตราการผลิต (Pcs/Min)
+                        </h3>
+                        <div class="h-[250px]"><canvas id="speedChart"></canvas></div>
+                    </div>
+                    <div class="glass-card p-8 rounded-[2.5rem]">
+                        <h3 class="text-sm font-black uppercase mb-6 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-bar text-blue-500"></i> สถิติยอดผลิต 5 วันล่าสุด
+                        </h3>
+                        <div class="h-[250px]"><canvas id="dailyChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-8 rounded-[2.5rem]">
+                    <h3 class="text-sm font-black uppercase mb-6 flex items-center gap-2 border-b pb-4 text-slate-500">
+                        <i class="fa-solid fa-plug text-blue-500"></i> PLC I/O Signal Status (สถานะสัญญาณดิจิตอล)
+                    </h3>
+                    <div class="grid grid-cols-4 md:grid-cols-8 gap-4">
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="io-led bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                            <span class="text-[9px] font-black uppercase">Sensor_A</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 opacity-30">
+                            <div class="io-led bg-slate-300"></div>
+                            <span class="text-[9px] font-black uppercase">Sensor_B</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="io-led bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                            <span class="text-[9px] font-black uppercase">Tray_In</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 opacity-30">
+                            <div class="io-led bg-slate-300"></div>
+                            <span class="text-[9px] font-black uppercase">Limit_SW</span>
+                        </div>
+                        </div>
+                </div>
+            </div>
+
+            <div class="col-span-12 lg:col-span-4 space-y-6">
+                
+                <div class="glass-card p-8 rounded-[2.5rem] bg-blue-600 text-white border-none shadow-xl shadow-blue-200">
+                    <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-2">Cycle Time (เวลาต่อรอบ)</p>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-6xl font-black" id="liveCycle">2.4</span>
+                        <span class="text-sm font-bold text-blue-200 uppercase">วินาที</span>
+                    </div>
+                    <p class="text-[10px] text-blue-100 mt-4 italic opacity-80">* ความเร็วที่เหมาะสมคือ 2.0-2.5 วินาที</p>
+                </div>
+
+                <div class="glass-card p-6 rounded-[2.5rem]">
+                    <h3 class="text-xs font-black uppercase mb-5 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-blue-500"></i> วิเคราะห์คอขวด (Bottleneck)
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold mb-1 uppercase">
+                                <span>จังหวะพลิกขนมปัง (Step 12)</span>
+                                <span class="text-blue-600">1.2 วินาที</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-1.5 rounded-full"><div class="bg-blue-500 h-full rounded-full" style="width: 75%"></div></div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold mb-1 uppercase text-slate-400">
+                                <span>จังหวะถอยแขน (Step 14)</span>
+                                <span>0.8 วินาที</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-1.5 rounded-full"><div class="bg-green-400 h-full rounded-full" style="width: 40%"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 rounded-[2.5rem]">
+                    <div class="flex justify-between items-center mb-4 border-b pb-3">
+                        <h3 class="text-xs font-black uppercase">PLC Event Logs</h3>
+                        <button class="text-[9px] font-black text-slate-400 hover:text-red-500 uppercase">Clear</button>
+                    </div>
+                    <div id="eventLog" class="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqlBzXhKiGtOGx4fzKcul2gMKoJTEs968",
+            authDomain: "kp-inventory-system.firebaseapp.com",
+            databaseURL: "https://kp-inventory-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kp-inventory-system",
+            storageBucket: "kp-inventory-system.firebasestorage.app",
+            messagingSenderId: "776715886830",
+            appId: "1:776715886830:web:7e6fd0bb788113a00353ff"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // --- 2. CHARTING ---
+        let speedChart, dailyChart;
+        function initCharts() {
+            // Speed Line Chart
+            const ctx1 = document.getElementById('speedChart').getContext('2d');
+            speedChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['T-5', 'T-4', 'T-3', 'T-2', 'T-1', 'Live'],
+                    datasets: [{
+                        label: 'Pcs/Min',
+                        data: [20, 22, 21, 24, 25, 23],
+                        borderColor: '#3b82f6',
+                        borderWidth: 4,
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            // Daily Bar Chart (สรุปยอดผลิตย้อนหลัง)
+            const ctx2 = document.getElementById('dailyChart').getContext('2d');
+            dailyChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.'],
+                    datasets: [{
+                        label: 'ยอดผลิต',
+                        data: [1200, 1900, 1700, 2100, 1800],
+                        backgroundColor: '#e2e8f0',
+                        hoverBackgroundColor: '#3b82f6',
+                        borderRadius: 8
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // --- 3. DATA LOGIC ---
+        let errorCount = 0;
+        const stepMap = { 10: "READY / รอคำสั่ง", 11: "หนีบถาดขนมปัง", 12: "กำลังพลิกถาด", 13: "คลายตัวหนีบ", 14: "ถอยแขนกลับ", 15: "จบขั้นตอน" };
+
+        db.ref('machine01').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                // Update Numeric Values
+                document.getElementById('liveCount').innerText = (data.total_count || 0).toLocaleString();
+                document.getElementById('liveEfficiency').innerText = data.efficiency || 0;
+                document.getElementById('effBar').style.width = (data.efficiency || 0) + '%';
+                document.getElementById('liveCycle').innerText = data.cycle_time || 0;
+                document.getElementById('estIncome').innerText = ((data.total_count || 0) * 0.5).toLocaleString(); // สมมติชิ้นละ 0.5 บาท
+
+                // Update PLC Step
+                const currentStep = data.m_step || 10;
+                document.getElementById('liveStep').innerText = currentStep;
+                document.getElementById('stepName').innerText = stepMap[currentStep] || "UNKNOWN";
+
+                // AI Advice & Alarm
+                if (data.status === 'Error') {
+                    errorCount++;
+                    document.getElementById('alarmCount').innerText = errorCount;
+                    document.getElementById('aiAdvice').innerText = data.ai_advice || "วิเคราะห์พบ Error: สัญญาณค้างที่ Step " + currentStep + " กรุณาตรวจสอบ Limit Switch หรือ Sensor ตรวจจับถาด";
+                    document.getElementById('aiAdvice').classList.add('text-red-600');
+                    addLog("🚨 ALARM: เครื่องหยุดทำงานผิดปกติที่ขั้นตอน " + currentStep, 'red');
+                } else {
+                    document.getElementById('aiAdvice').classList.remove('text-red-600');
+                    if (data.last_action) addLog("✔️ " + data.last_action, 'blue');
+                }
+
+                // Chart Update
+                if(data.current_speed && speedChart) {
+                    speedChart.data.datasets[0].data.shift();
+                    speedChart.data.datasets[0].data.push(data.current_speed);
+                    speedChart.update();
+                }
+            }
+        });
+
+        function addLog(msg, color) {
+            const logBox = document.getElementById('eventLog');
+            const time = new Date().toLocaleTimeString('th-TH');
+            const html = `<div class="p-3 bg-white border border-slate-100 rounded-xl text-[11px] font-bold ${color === 'red' ? 'text-red-500 border-l-4 border-l-red-500' : 'text-slate-600 border-l-4 border-l-blue-500'}">
+                            <span class="opacity-50">[${time}]</span> ${msg}
+                          </div>`;
+            logBox.insertAdjacentHTML('afterbegin', html);
+            if(logBox.children.length > 25) logBox.lastElementChild.remove();
+        }
+
+        window.onload = initCharts;
+    </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | MECH DEPT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap');
+        
+        :root { 
+            --mech-green: #16a34a; 
+            --mech-dark: #0f172a; 
+            --mech-light: #f8fafc;
+            --border: #e2e8f0;
+        }
+        
+        body { background: var(--mech-light); color: var(--mech-dark); font-family: 'Inter', sans-serif; min-height: 100vh; }
+        
+        .warehouse-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: -1; opacity: 0.03; pointer-events: none; }
+        .warehouse-img { width: 100%; height: 100%; object-fit: cover; background-image: url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070'); }
+
+        .top-nav { background: white; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        .glass-card { background: white; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+        /* Terminal Console Styling */
+        .terminal-box { 
+            background: #020617; 
+            border-left: 6px solid var(--mech-green);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .terminal-container {
+            height: 380px; /* ขยายความสูงให้ใหญ่ขึ้น */
+            overflow-y: auto;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .log-entry {
+            font-size: 13px;
+            line-height: 1.5;
+            padding-left: 10px;
+            border-left: 2px solid #1e293b;
+            animation: fadeIn 0.3s ease-out;
+            white-space: pre-wrap;
+        }
+
+        .log-entry.new { border-left-color: var(--mech-green); background: rgba(22, 163, 74, 0.05); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Terminal Text Colors */
+        .t-time { color: #64748b; margin-right: 10px; }
+        .t-user { color: #f8fafc; font-weight: bold; }
+        .t-out { color: #ef4444; font-weight: bold; }
+        .t-in { color: #22c55e; font-weight: bold; }
+        .t-item { color: #38bdf8; }
+        .t-code { color: #94a3b8; font-size: 11px; }
+
+        .type-badge { padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .out { color: #dc2626; background: #fee2e2; }
+        .in { color: #16a34a; background: #dcfce7; }
+        
+        .input-field { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 10px 15px; outline: none; transition: 0.2s; }
+        .input-field:focus { border-color: var(--mech-green); }
+
+        .btn-verify { background: var(--mech-green); color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 11px; transition: 0.2s; }
+        .verified-row { background: #f0fdf4 !important; }
+        
+        .pulse-online { width: 8px; height: 8px; background: #16a34a; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(22, 163, 74, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); } 100% { box-shadow: 0 0 0 0px rgba(22, 163, 74, 0); } }
+        
+        .terminal-container::-webkit-scrollbar { width: 6px; }
+        .terminal-container::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="warehouse-bg"><div class="warehouse-img"></div></div>
+
+    <header class="top-nav">
+        <div class="max-w-[1600px] mx-auto px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="bg-slate-900 text-white p-2 rounded-lg"><i class="fa-solid fa-user-shield text-lg"></i></div>
+                <div>
+                    <h2 class="font-black text-xl tracking-tighter leading-none uppercase">Admin <span class="text-green-600">Console</span></h2>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Live Inventory Monitoring</p>
+                </div>
+            </div>
+            <div id="clock" class="text-xs font-bold text-slate-500 font-mono"></div>
+        </div>
+    </header>
+
+    <main class="max-w-[1400px] mx-auto p-6 md:p-10">
+        
+        <div class="terminal-box mb-8">
+            <div class="bg-slate-900/50 px-5 py-3 border-b border-white/5 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="pulse-online"></span>
+                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Live Activity Terminal</span>
+                </div>
+                <div class="flex gap-4">
+                    <div class="text-[10px] text-slate-500 font-bold uppercase">Total Today: <span id="countTotal" class="text-white">0</span></div>
+                    <div class="text-[10px] text-slate-500 font-bold uppercase">Pending: <span id="countPending" class="text-red-500">0</span></div>
+                </div>
+            </div>
+            <div id="terminalLog" class="terminal-container">
+                <div class="text-slate-500 italic text-sm">Initializing system connection...</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="md:col-span-3 relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="searchInput" onkeyup="renderLogs()" placeholder="ค้นหาชื่อผู้ยืม, MatCode หรือชื่ออุปกรณ์..." class="w-full input-field pl-12 text-sm font-medium">
+            </div>
+            <select id="typeFilter" onchange="renderLogs()" class="input-field text-sm font-bold cursor-pointer">
+                <option value="ALL">ทุกรายการ</option>
+                <option value="OUT">ยืมออก (OUT)</option>
+                <option value="IN">คืนของ (IN)</option>
+                <option value="PENDING">⚠️ รอตรวจสอบ</option>
+            </select>
+        </div>
+
+        <div class="glass-card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-[11px] uppercase tracking-widest text-slate-500 font-bold">
+                            <th class="p-4">Time</th>
+                            <th class="p-4">Operator</th>
+                            <th class="p-4">Item</th>
+                            <th class="p-4 text-center">Qty</th>
+                            <th class="p-4 text-center">Type</th>
+                            <th class="p-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTable" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqlBzXhKiGtOGx4fzKcul2gMKoJTEs968",
+            authDomain: "kp-inventory-system.firebaseapp.com",
+            databaseURL: "https://kp-inventory-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kp-inventory-system",
+            storageBucket: "kp-inventory-system.firebasestorage.app",
+            messagingSenderId: "776715886830",
+            appId: "1:776715886830:web:7e6fd0bb788113a00353ff"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let allLogs = [];
+
+        function listenToLogs() {
+            db.ref('all_transactions').on('value', (snapshot) => {
+                const data = snapshot.val();
+                allLogs = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        allLogs.push({ id: key, ...data[key] });
+                    });
+                }
+                allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                updateTerminal(); // เรียกฟังก์ชัน Terminal
+                renderLogs();
+            });
+        }
+
+        // ฟังก์ชันจัดการ Terminal Log แบบไหล
+        function updateTerminal() {
+            const terminal = document.getElementById("terminalLog");
+            if(allLogs.length > 0) {
+                // เลือก 15 รายการล่าสุดมาแสดงใน Terminal
+                // เรียงจากเก่าไปใหม่ (บนลงล่าง) เพื่อให้บรรทัดล่าสุดอยู่ล่างสุด
+                const recent = allLogs.slice(0, 15).reverse(); 
+                
+                terminal.innerHTML = recent.map((log, index) => {
+                    const time = new Date(log.timestamp).toLocaleTimeString('th-TH', {hour12: false});
+                    const actionClass = log.type === "OUT" ? "t-out" : "t-in";
+                    const actionTxt = log.type === "OUT" ? "WITHDRAW" : "RETURN  ";
+                    const isNewest = index === recent.length - 1 ? 'new' : '';
+
+                    return `
+                        <div class="log-entry ${isNewest}">
+                            <span class="t-time">[${time}]</span>
+                            <span class="t-user">${log.opName.padEnd(12, ' ')}</span>
+                            <span class="${actionClass}">${actionTxt}</span>
+                            <span class="t-item">${log.toolName}</span>
+                            <span class="t-code ml-2">(${log.matCode}) x${log.qty}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                // เลื่อนลงไปที่รายการล่าสุดอัตโนมัติ
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+        }
+
+        function renderLogs() {
+            const search = document.getElementById("searchInput").value.toLowerCase();
+            const filter = document.getElementById("typeFilter").value;
+            const container = document.getElementById("logTable");
+            
+            const filtered = allLogs.filter(log => {
+                const matchSearch = String(log.opName).toLowerCase().includes(search) || 
+                                    String(log.toolName).toLowerCase().includes(search) || 
+                                    String(log.matCode).toLowerCase().includes(search);
+                let matchType = filter === "PENDING" ? log.adminStatus !== "Verified" : (filter === "ALL" || log.type === filter);
+                return matchSearch && matchType;
+            });
+
+            container.innerHTML = filtered.map(log => {
+                const isVerified = log.adminStatus === "Verified";
+                return `
+                <tr class="hover:bg-slate-50 transition ${isVerified ? 'verified-row' : ''}">
+                    <td class="p-4 text-[11px] font-mono text-slate-500">${new Date(log.timestamp).toLocaleString('th-TH')}</td>
+                    <td class="p-4 font-bold text-sm text-slate-700">${log.opName}</td>
+                    <td class="p-4">
+                        <div class="text-sm font-semibold text-slate-800">${log.toolName}</div>
+                        <div class="text-[10px] text-slate-400 font-mono tracking-tighter">${log.matCode}</div>
+                    </td>
+                    <td class="p-4 text-center font-bold">${log.qty}</td>
+                    <td class="p-4 text-center"><span class="type-badge ${log.type.toLowerCase()}">${log.type}</span></td>
+                    <td class="p-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            ${isVerified 
+                                ? `<span class="text-green-600 text-[10px] font-bold">VERIFIED</span>` 
+                                : `<button onclick="verifyItem('${log.id}')" class="btn-verify">CHECK</button>`}
+                            <button onclick="deleteItem('${log.id}')" class="text-slate-300 hover:text-red-500 px-2"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById("countTotal").innerText = allLogs.filter(l => isToday(new Date(l.timestamp))).length;
+            document.getElementById("countPending").innerText = allLogs.filter(l => l.adminStatus !== "Verified").length;
+        }
+
+        async function verifyItem(id) {
+            if(confirm("Verify this transaction?")) {
+                await db.ref('all_transactions/' + id).update({ adminStatus: "Verified", verifiedAt: new Date().toISOString() });
+            }
+        }
+
+        async function deleteItem(id) {
+            if(confirm("ลบข้อมูลนี้ถาวร?")) {
+                await db.ref('all_transactions/' + id).remove();
+            }
+        }
+
+        function isToday(d) {
+            const t = new Date();
+            return d.getDate() == t.getDate() && d.getMonth() == t.getMonth() && d.getFullYear() == t.getFullYear();
+        }
+
+        setInterval(() => {
+            document.getElementById("clock").innerText = new Date().toLocaleString('th-TH');
+        }, 1000);
+        
+        window.onload = listenToLogs;
+    </script>
+</body>
+</html>

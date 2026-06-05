@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MECH DEPT | ศูนย์รวมงานวิศวกรรม 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700;900&family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+        /* ===== THEME VARIABLES ===== */
+        :root {
+            --bg: #ffffff;
+            --bg-card: rgba(255, 255, 255, 0.7); /* ปรับให้เป็นกระจกใสอ่านง่าย */
+            --bg-nav: rgba(255, 255, 255, 0.9);
+            --bg-hover: rgba(0, 0, 0, 0.05);
+            --bg-thead: #f8fafc;
+            --border: rgba(0, 0, 0, 0.1);
+            --text-primary: #000000;
+            --text-secondary: #1e293b;
+            --text-muted: #64748b;
+            --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.05);
+            --accent: #000000;
+            --video-overlay: rgba(255, 255, 255, 0.25); /* ดึงดีเทลวิดีโอในโหมดสว่าง */
+        }
+        [data-theme="dark"] {
+            --bg: #000000;
+            --bg-card: rgba(10, 10, 10, 0.65); /* กระจกดำแบบพรีเมียม มองทะลุเห็นวิดีโอ */
+            --bg-nav: rgba(0, 0, 0, 0.85);
+            --bg-hover: rgba(255, 255, 255, 0.1);
+            --bg-thead: #111111;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.8);
+            --accent: #ffffff;
+            --video-overlay: rgba(0, 0, 0, 0.55); /* ดรอปแสงวิดีโอลงเพื่อขับข้อความ */
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            font-family: 'Sarabun', sans-serif;
+            padding-top: 100px;
+            min-height: 100vh;
+            color: var(--text-primary);
+            transition: background 0.3s, color 0.3s;
+            margin: 0;
+            position: relative;
+        }
+
+        /* ===== FULLSCREEN VIDEO BACKGROUND ===== */
+        .video-background-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -2;
+            overflow: hidden;
+            background: #000;
+        }
+        .video-background-container video {
+            min-width: 100%; min-height: 100%;
+            width: auto; height: auto;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+        }
+        .video-overlay-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            background: var(--video-overlay);
+            transition: background 0.3s;
+            pointer-events: none;
+        }
+
+        .eng { font-family: 'Chakra Petch', sans-serif; }
+
+        /* ===== INTRO ANIMATIONS (ลูกเล่นตอนเปิดเว็บ) ===== */
+        @keyframes revealUp {
+            from { opacity: 0; transform: translateY(25px); filter: blur(4px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        .reveal {
+            opacity: 0;
+            animation: revealUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.25s; }
+        .delay-3 { animation-delay: 0.4s; }
+        .delay-4 { animation-delay: 0.55s; }
+
+        /* ===== DARK MODE TOGGLE ===== */
+        .dark-toggle {
+            position: fixed; top: 22px; right: 20px; width: 45px; height: 45px;
+            background: var(--bg-nav); border-radius: 0px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2100; box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            cursor: pointer; transition: transform .2s, background .3s;
+        }
+        .dark-toggle:hover { transform: scale(1.05); }
+        .dark-toggle .icon-sun  { display: none; }
+        .dark-toggle .icon-moon { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-sun  { display: block; }
+        [data-theme="dark"] .dark-toggle .icon-moon { display: none; }
+
+        /* ===== TOP NAV BAR (DESKTOP) ===== */
+        .top-nav-bar {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
+            background: var(--bg-nav); height: 60px; padding: 0 8px; border-radius: 0px;
+            display: flex; align-items: center; gap: 5px; z-index: 2000;
+            box-shadow: var(--shadow-nav); width: fit-content; min-width: 550px;
+            border: 1px solid var(--border); transition: background .3s, border .3s;
+            backdrop-filter: blur(10px);
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 8px; color: var(--text-secondary);
+            text-decoration: none; font-weight: 500; padding: 10px 15px;
+            border-radius: 0px; font-size: 13px; font-family: 'Sarabun', sans-serif;
+            transition: all .2s; white-space: nowrap;
+        }
+        .nav-item:hover { background: var(--bg-hover); }
+        .nav-item.active { background: var(--text-primary); color: var(--bg); font-weight: bold; }
+
+        /* ===== BOTTOM NAV (MOBILE) ===== */
+        .bottom-nav {
+            display: none;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--bg-nav); border-top: 1px solid var(--border);
+            z-index: 2000; padding: 8px 0 env(safe-area-inset-bottom, 8px);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            transition: background .3s;
+            backdrop-filter: blur(10px);
+        }
+        .bottom-nav-inner {
+            display: flex; justify-content: space-around; align-items: center;
+        }
+        .bnav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            color: var(--text-muted); text-decoration: none;
+            font-size: 10px; font-family: 'Sarabun', sans-serif;
+            padding: 6px 12px; transition: all .2s; min-width: 56px;
+        }
+        .bnav-item i { font-size: 18px; }
+        .bnav-item.active { color: var(--text-primary); font-weight: bold; }
+
+        /* ===== HERO CENTERED LAYOUT ===== */
+        .hero-section-centered {
+            min-height: calc(85vh - 100px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            padding: 4rem 0;
+        }
+
+        /* ===== GLASSMORPHISM MODERN CARDS ===== */
+        .module-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px; /* ปรับมนให้ดูผ่อนคลาย สบายตาตามเว็บสมัยใหม่ */
+            padding: 2.5rem;
+            box-shadow: var(--shadow-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .module-card:hover {
+            background: var(--text-primary);
+            color: var(--bg);
+            border-color: var(--text-primary);
+            transform: translateY(-6px);
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s;
+        }
+
+        .btn-black-white {
+            display: inline-block;
+            background: var(--text-primary);
+            color: var(--bg);
+            padding: 1.1rem 3rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            border-radius: 50px; /* ปรับดีไซน์โค้งเว้าเข้าเซ็นเตอร์ */
+            transition: 0.3s;
+            border: 1px solid var(--text-primary);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
+        }
+        .btn-black-white:hover {
+            background: transparent;
+            color: var(--text-primary);
+            backdrop-filter: blur(8px);
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        .section-label { font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--text-muted); }
+
+        /* ===== RESPONSIVE BREAKPOINTS ===== */
+        @media (max-width: 768px) {
+            body { padding-top: 20px; padding-bottom: 80px; }
+            .top-nav-bar { display: none !important; }
+            .bottom-nav { display: block; }
+            .hero-section-centered { min-height: auto; padding: 60px 0; }
+            .dark-toggle { top: 12px; right: 16px; width: 38px; height: 38px; }
+            .stat-grid { grid-template-columns: 1fr !important; gap: 16px; }
+            .stat-card { border-radius: 20px !important; }
+            .module-grid { gap: 20px !important; margin-top: 40px !important; }
+            .module-card { border-radius: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="video-background-container">
+    <video autoplay loop muted playsinline>
+        <source src="Hailuo_Video_Ultra realistic smart factory _518465639303376901.mp4" type="video/mp4">
+    </video>
+</div>
+<div class="video-overlay-layer"></div>
+
+<button class="dark-toggle" onclick="toggleDark()" aria-label="Toggle dark mode">
+    <i class="fa-solid fa-moon text-base icon-moon"></i>
+    <i class="fa-solid fa-sun text-base icon-sun"></i>
+</button>
+
+<nav class="top-nav-bar">
+    <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
+    <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-chart-line"></i><span>สรุปสต็อก</span></a>
+    <a href="dashboard-work.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
+    <a href="working-time.html" class="nav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
+    <a href="inventory-select.html" class="nav-item"><i class="fa-solid fa-boxes-stacked"></i><span>จัดการสต็อก</span></a>
+</nav>
+
+<nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+        <a href="index.html" class="bnav-item active"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
+        <a href="dashboard.html" class="bnav-item"><i class="fa-solid fa-chart-line"></i><span>สต็อก</span></a>
+        <a href="dashboard-work.html" class="bnav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
+        <a href="working-time.html" class="bnav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
+        <a href="inventory-select.html" class="bnav-item"><i class="fa-solid fa-boxes-stacked"></i><span>สต็อก</span></a>
+    </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-6 pb-12 relative z-10">
+    <section class="hero-section-centered">
+        <span class="section-label mb-4 reveal delay-1">ระบบบริหารจัดการโรงงานอัจฉริยะ</span>
+        <h1 class="text-7xl md:text-[8.5rem] font-black leading-none mb-6 italic tracking-tighter eng reveal delay-2">
+            MECH DEPT
+        </h1>
+        <p class="text-base md:text-lg max-w-xl leading-relaxed mb-10 font-light reveal delay-3" style="color:var(--text-secondary)">
+            ศูนย์กลางการจัดการคลังสินค้าและระบบติดตามเครื่องจักรแบบ Real-time เชื่อมต่อ PLC Siemens เต็มรูปแบบเพื่อประสิทธิภาพสูงสุด
+        </p>
+        <div class="reveal delay-4">
+            <a href="#main-content" class="btn-black-white text-xs eng">ตรวจสอบระบบทั้งหมด</a>
+        </div>
+    </section>
+
+    <div id="main-content" class="mt-12 relative z-20 reveal delay-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 stat-grid">
+            <div class="stat-card md:rounded-l-3xl">
+                <p class="section-label mb-2">จำนวนวัสดุในคลัง</p>
+                <div id="dashTotalItems" class="text-5xl font-black eng">--</div>
+            </div>
+            <div class="stat-card">
+                <p class="section-label mb-2">เครื่องจักรที่ทำงาน</p>
+                <div class="text-5xl font-black eng">1 <span class="text-xl opacity-30">/ 1</span></div>
+            </div>
+            <div class="stat-card md:rounded-r-3xl">
+                <p class="section-label mb-2">การแจ้งเตือน</p>
+                <div class="text-5xl font-black eng text-emerald-500">0</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 module-grid">
+            <div class="module-card">
+                <i class="fa-solid fa-chart-line text-3xl mb-8"></i>
+                <h3 class="text-2xl font-bold mb-4 eng">ข้อมูลระบบภาพรวม</h3>
+                <p class="text-sm mb-10 font-light leading-relaxed" style="color:var(--text-muted)">ดูสถิติและข้อมูลการทำงานย้อนหลังของคลังสินค้า Store 25 และ R1 แบบละเอียด</p>
+                <a href="dashboard.html" class="text-[10px] font-bold uppercase tracking-widest border-b-2 pb-1 eng" style="border-color:var(--text-primary)">เปิดแดชบอร์ด</a>
+            </div>
+
+            <div class="module-card">
+                <i class="fa-solid fa-clock-rotate-left text-3xl mb-8"></i>
+                <h3 class="text-2xl font-bold mb-4 eng">บันทึกเวลาทำงาน</h3>
+                <p class="text-sm mb-10 font-light leading-relaxed" style="color:var(--text-muted)">ระบบลงเวลาปฏิบัติงานสำหรับพนักงานฝ่ายวิศวกรรมและซ่อมบำรุง</p>
+                <a href="working-time.html" class="text-[10px] font-bold uppercase tracking-widest border-b-2 pb-1 eng" style="border-color:var(--text-primary)">ลงชื่อเข้าใช้งาน</a>
+            </div>
+
+            <div class="module-card">
+                <i class="fa-solid fa-warehouse text-3xl mb-8"></i>
+                <h3 class="text-2xl font-bold mb-4 eng">คลังพัสดุและอะไหล่</h3>
+                <p class="text-sm mb-10 font-light leading-relaxed" style="color:var(--text-muted)">จัดการเบิก-จ่าย และตรวจสอบจำนวนอะไหล่คงคลังในระบบดิจิทัล</p>
+                <a href="inventory-select.html" class="text-[10px] font-bold uppercase tracking-widest border-b-2 pb-1 eng" style="border-color:var(--text-primary)">จัดการคลังสินค้า</a>
+            </div>
+        </div>
+
+        <div class="mt-24 pt-10 border-t flex flex-col md:flex-row justify-between items-center text-[10px] font-bold uppercase tracking-[0.4em] eng" style="border-color:var(--border); color:var(--text-muted)">
+            <div class="flex flex-col md:flex-row gap-4 md:gap-8 items-center mb-4 md:mb-0">
+                <span><i class="status-dot"></i> ระบบเชื่อมต่อปกติ</span>
+                <span>SIEMENS S7 CONNECTED</span>
+            </div>
+            <div></div>
+        </div>
+    </div>
+</main>
+
+<script>
+// ===== DARK MODE ENGINE =====
+function toggleDark() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+})();
+
+// ===== FETCH STATS จาก GOOGLE SHEETS =====
+const id1 = "1ZaWf8sYX0wC7ege0evyj9R2EIsA5nUOROprzCPdscmE";
+const id2 = "1wKEYLTXcg7LCwo4qFpVXUgA4WNyRGIGDeQocqu-7KjU";
+
+async function fetchAllStats() {
+    try {
+        const [resp1, resp2] = await Promise.all([
+            fetch(`https://docs.google.com/spreadsheets/d/${id1}/gviz/tq?tqx=out:json&sheet=KP_25`),
+            fetch(`https://docs.google.com/spreadsheets/d/${id2}/gviz/tq?tqx=out:json&sheet=KP_R1`)
+        ]);
+        const txt1 = await resp1.text(); const txt2 = await resp2.text();
+        const json1 = JSON.parse(txt1.substr(47).slice(0, -2));
+        const json2 = JSON.parse(txt2.substr(47).slice(0, -2));
+        const allRows = [...json1.table.rows, ...json2.table.rows];
+        
+        let itemCount = 0;
+        allRows.forEach(r => { 
+            if (r.c && r.c[0] && r.c[0].v !== null && String(r.c[0].v).trim() !== "") { 
+                itemCount++; 
+            } 
+        });
+        document.getElementById('dashTotalItems').textContent = itemCount.toLocaleString();
+    } catch (err) { 
+        console.error("Error:", err); 
+        document.getElementById('dashTotalItems').textContent = "ERR";
+    }
+}
+
+window.onload = fetchAllStats;
+</script>
+</body>
+</html>
