@@ -1,15 +1,18 @@
 {
-  "name": "KP Inventory System",
-  "short_name": "KP-System",
+  "name": "MECH DEPT Intelligent System",
+  "short_name": "MECH DEPT",
+  "description": "ระบบบริหารจัดการโรงงานและคลังสินค้าอัจฉริยะ MECH DEPT",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#020617",
-  "theme_color": "#a855f7",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/583/583371.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/561/561143.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
