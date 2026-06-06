@@ -86,8 +86,9 @@
             position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
             background: var(--bg-nav); height: 60px; padding: 0 8px; border-radius: 0px;
             display: flex; align-items: center; gap: 5px; z-index: 2000;
-            box-shadow: var(--shadow-nav); width: fit-content; min-width: 580px;
+            box-shadow: var(--shadow-nav); width: fit-content; min-width: 550px;
             border: 1px solid var(--border); transition: background .3s, border .3s;
+            backdrop-filter: blur(10px);
         }
         .nav-item {
             display: flex; align-items: center; gap: 8px; color: var(--text-secondary);
@@ -106,6 +107,7 @@
             z-index: 2000; padding: 8px 0 env(safe-area-inset-bottom, 8px);
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
             transition: background .3s;
+            backdrop-filter: blur(10px);
         }
         .bottom-nav-inner {
             display: flex; justify-content: space-around; align-items: center;
@@ -160,8 +162,6 @@
         <a href="dashboard-work.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
         <a href="working-time.html" class="nav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
         <a href="inventory-select.html" class="nav-item"><i class="fa-solid fa-boxes-stacked"></i><span>จัดการสต็อก</span></a>
-        <div class="w-px h-6 bg-slate-300 self-center mx-2 opacity-40"></div>
-        <a href="#" onclick="handleLogout()" class="text-red-500 hover:opacity-70 p-2 transition-all"><i class="fa-solid fa-power-off"></i></a>
     </nav>
 
     <nav class="bottom-nav">
@@ -170,7 +170,6 @@
             <a href="dashboard.html" class="bnav-item active"><i class="fa-solid fa-chart-line"></i><span>สต็อก</span></a>
             <a href="dashboard-work.html" class="bnav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
             <a href="working-time.html" class="bnav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
-            <a href="#" onclick="handleLogout()" class="bnav-item text-red-500"><i class="fa-solid fa-power-off"></i><span>ออก</span></a>
         </div>
     </nav>
 
