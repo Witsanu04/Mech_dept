@@ -71,21 +71,42 @@
         /* Nav Bar - ปรับให้สอดคล้องกับหน้าอื่นๆ */
         .top-nav-bar {
             position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
-            background: var(--nav-bg); height: 60px; padding: 0 8px; border-radius: 18px;
-            display: flex; align-items: center; gap: 5px;
-            z-index: 2000; box-shadow: var(--shadow-nav);
-            width: fit-content; max-width: 95%; border: 1px solid var(--border-color);
-            transition: background 0.3s, border-color 0.3s;
+            background: var(--bg-nav); height: 60px; padding: 0 8px; border-radius: 0px;
+            display: flex; align-items: center; gap: 5px; z-index: 2000;
+            box-shadow: var(--shadow-nav); width: fit-content; min-width: 550px;
+            border: 1px solid var(--border); transition: background .3s, border .3s;
+            backdrop-filter: blur(10px);
         }
-
         .nav-item {
-            display: flex; align-items: center; justify-content: center;
-            gap: 8px; color: #64748b; text-decoration: none; font-weight: 500;
-            padding: 8px 12px; border-radius: 10px; transition: 0.3s; font-size: 13px;
+            display: flex; align-items: center; gap: 8px; color: var(--text-secondary);
+            text-decoration: none; font-weight: 500; padding: 10px 15px;
+            border-radius: 0px; font-size: 13px; font-family: 'Noto Sans Thai', sans-serif;
+            transition: all .2s; white-space: nowrap;
         }
-        [data-theme="dark"] .nav-item { color: #9ca3af; }
-        [data-theme="dark"] .nav-item:hover { color: #ffffff; }
-        .nav-item.active { background: #22c55e; color: white !important; }
+        .nav-item:hover { background: var(--bg-hover); }
+        .nav-item.active { background: var(--text-primary); color: var(--bg); font-weight: bold; }
+
+        /* ===== BOTTOM NAV (MOBILE) ===== */
+        .bottom-nav {
+            display: none;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--bg-nav); border-top: 1px solid var(--border);
+            z-index: 2000; padding: 8px 0 env(safe-area-inset-bottom, 8px);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            transition: background .3s;
+            backdrop-filter: blur(10px);
+        }
+        .bottom-nav-inner {
+            display: flex; justify-content: space-around; align-items: center;
+        }
+        .bnav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            color: var(--text-muted); text-decoration: none;
+            font-size: 10px; font-family: 'Noto Sans Thai', sans-serif;
+            padding: 6px 12px; transition: all .2s; min-width: 56px;
+        }
+        .bnav-item i { font-size: 18px; }
+        .bnav-item.active { color: var(--text-primary); font-weight: bold; }
 
         /* Card ดีไซน์เดิมของคุณคงไว้เป๊ะๆ */
         .tool-card {
