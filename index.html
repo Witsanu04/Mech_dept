@@ -6,6 +6,8 @@
     <title>MECH DEPT | ศูนย์รวมงานวิศวกรรม 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -27,7 +29,7 @@
         /* ===== THEME VARIABLES ===== */
         :root {
             --bg: #ffffff;
-            --bg-card: rgba(255, 255, 255, 0.7); /* ปรับให้เป็นกระจกใสอ่านง่าย */
+            --bg-card: rgba(255, 255, 255, 0.7);
             --bg-nav: rgba(255, 255, 255, 0.9);
             --bg-hover: rgba(0, 0, 0, 0.05);
             --bg-thead: #f8fafc;
@@ -38,11 +40,12 @@
             --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
             --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.05);
             --accent: #000000;
-            --video-overlay: rgba(255, 255, 255, 0.25); /* ดึงดีเทลวิดีโอในโหมดสว่าง */
+            --video-overlay: rgba(255, 255, 255, 0.25);
+            --chart-grid: rgba(0, 0, 0, 0.05);
         }
         [data-theme="dark"] {
             --bg: #000000;
-            --bg-card: rgba(10, 10, 10, 0.65); /* กระจกดำแบบพรีเมียม มองทะลุเห็นวิดีโอ */
+            --bg-card: rgba(10, 10, 10, 0.65);
             --bg-nav: rgba(0, 0, 0, 0.85);
             --bg-hover: rgba(255, 255, 255, 0.1);
             --bg-thead: #111111;
@@ -53,7 +56,8 @@
             --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.8);
             --accent: #ffffff;
-            --video-overlay: rgba(0, 0, 0, 0.55); /* ดรอปแสงวิดีโอลงเพื่อขับข้อความ */
+            --video-overlay: rgba(0, 0, 0, 0.55);
+            --chart-grid: rgba(255, 255, 255, 0.08);
         }
 
         * { box-sizing: border-box; }
@@ -98,7 +102,7 @@
 
         .eng { font-family: 'Chakra Petch', sans-serif; }
 
-        /* ===== INTRO ANIMATIONS (ลูกเล่นตอนเปิดเว็บ) ===== */
+        /* ===== INTRO ANIMATIONS ===== */
         @keyframes revealUp {
             from { opacity: 0; transform: translateY(25px); filter: blur(4px); }
             to { opacity: 1; transform: translateY(0); filter: blur(0); }
@@ -112,16 +116,22 @@
         .delay-3 { animation-delay: 0.4s; }
         .delay-4 { animation-delay: 0.55s; }
 
-        /* ===== DARK MODE TOGGLE ===== */
-        .dark-toggle {
-            position: fixed; top: 22px; right: 20px; width: 45px; height: 45px;
+        /* ===== CONTROLS POSITIONS (UPPER RIGHT) ===== */
+        .control-group {
+            position: fixed; top: 22px; right: 20px;
+            display: flex; gap: 10px; z-index: 2100;
+        }
+        .control-btn {
+            width: 45px; height: 45px;
             background: var(--bg-nav); border-radius: 0px;
             display: flex; align-items: center; justify-content: center;
-            z-index: 2100; box-shadow: var(--shadow-card);
+            box-shadow: var(--shadow-card);
             border: 1px solid var(--border);
             cursor: pointer; transition: transform .2s, background .3s;
+            color: var(--text-primary);
         }
-        .dark-toggle:hover { transform: scale(1.05); }
+        .control-btn:hover { transform: scale(1.05); background: var(--bg-hover); }
+        
         .dark-toggle .icon-sun  { display: none; }
         .dark-toggle .icon-moon { display: block; }
         [data-theme="dark"] .dark-toggle .icon-sun  { display: block; }
@@ -169,22 +179,22 @@
 
         /* ===== HERO CENTERED LAYOUT ===== */
         .hero-section-centered {
-            min-height: calc(85vh - 100px);
+            min-height: calc(80vh - 100px);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
             position: relative;
-            padding: 4rem 0;
+            padding: 3rem 0;
         }
 
         /* ===== GLASSMORPHISM MODERN CARDS ===== */
         .module-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 24px; /* ปรับมนให้ดูผ่อนคลาย สบายตาตามเว็บสมัยใหม่ */
-            padding: 2.5rem;
+            border-radius: 24px;
+            padding: 2.2rem;
             box-shadow: var(--shadow-card);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -215,7 +225,7 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.25em;
-            border-radius: 50px; /* ปรับดีไซน์โค้งเว้าเข้าเซ็นเตอร์ */
+            border-radius: 50px;
             transition: 0.3s;
             border: 1px solid var(--text-primary);
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
@@ -244,10 +254,11 @@
             .top-nav-bar { display: none !important; }
             .bottom-nav { display: block; }
             .hero-section-centered { min-height: auto; padding: 60px 0; }
-            .dark-toggle { top: 12px; right: 16px; width: 38px; height: 38px; }
+            .control-group { top: 12px; right: 16px; }
+            .control-btn { width: 38px; height: 38px; }
             .stat-grid { grid-template-columns: 1fr !important; gap: 16px; }
             .stat-card { border-radius: 20px !important; }
-            .module-grid { gap: 20px !important; margin-top: 40px !important; }
+            .module-grid { grid-template-columns: 1fr !important; gap: 20px !important; margin-top: 40px !important; }
             .module-card { border-radius: 20px; }
         }
     </style>
@@ -261,10 +272,15 @@
 </div>
 <div class="video-overlay-layer"></div>
 
-<button class="dark-toggle" onclick="toggleDark()" aria-label="Toggle dark mode">
-    <i class="fa-solid fa-moon text-base icon-moon"></i>
-    <i class="fa-solid fa-sun text-base icon-sun"></i>
-</button>
+<div class="control-group">
+    <a href="admin-log.html" class="control-btn" title="ระบบบันทึกของแอดมิน (Admin Log)">
+        <i class="fa-solid fa-user-shield text-base"></i>
+    </a>
+    <button class="control-btn dark-toggle" onclick="toggleDark()" aria-label="Toggle dark mode">
+        <i class="fa-solid fa-moon text-base icon-moon"></i>
+        <i class="fa-solid fa-sun text-base icon-sun"></i>
+    </button>
+</div>
 
 <nav class="top-nav-bar">
     <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i><span>หน้าแรก</span></a>
@@ -280,7 +296,7 @@
         <a href="dashboard.html" class="bnav-item"><i class="fa-solid fa-chart-line"></i><span>สต็อก</span></a>
         <a href="dashboard-work.html" class="bnav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
         <a href="working-time.html" class="bnav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
-        <a href="inventory-select.html" class="bnav-item"><i class="fa-solid fa-boxes-stacked"></i><span>สต็อก</span></a>
+        <a href="admin-log.html" class="bnav-item"><i class="fa-solid fa-user-shield"></i><span>Admin</span></a>
     </div>
 </nav>
 
@@ -299,14 +315,18 @@
     </section>
 
     <div id="main-content" class="mt-12 relative z-20 reveal delay-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 stat-grid">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 stat-grid">
             <div class="stat-card md:rounded-l-3xl">
                 <p class="section-label mb-2">จำนวนวัสดุในคลัง</p>
                 <div id="dashTotalItems" class="text-5xl font-black eng">--</div>
             </div>
             <div class="stat-card">
                 <p class="section-label mb-2">เครื่องจักรที่ทำงาน</p>
-                <div class="text-5xl font-black eng">1 <span class="text-xl opacity-30">/ 1</span></div>
+                <div class="text-5xl font-black eng text-emerald-500">1 <span class="text-xl opacity-30" style="color:var(--text-primary)">/ 1</span></div>
+            </div>
+            <div class="stat-card">
+                <p class="section-label mb-2">งานซ่อมคงค้าง</p>
+                <div class="text-5xl font-black eng text-amber-500">3</div>
             </div>
             <div class="stat-card md:rounded-r-3xl">
                 <p class="section-label mb-2">การแจ้งเตือน</p>
@@ -314,25 +334,39 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 module-grid">
+        <div class="mt-12 module-card p-6 md:p-8">
+            <span class="section-label mb-4 block">สถิติและแนวโน้มแผนกประจำปี (Overview Analytics)</span>
+            <div class="w-full relative h-[300px] md:h-[380px]">
+                <canvas id="mechMainChart"></canvas>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-16 module-grid">
             <div class="module-card">
                 <i class="fa-solid fa-chart-line text-3xl mb-8"></i>
-                <h3 class="text-2xl font-bold mb-4 eng">ข้อมูลระบบภาพรวม</h3>
-                <p class="text-sm mb-10 font-light leading-relaxed" style="color:var(--text-muted)">ดูสถิติและข้อมูลการทำงานย้อนหลังของคลังสินค้า Store 25 และ R1 แบบละเอียด</p>
+                <h3 class="text-xl font-bold mb-4 eng">ข้อมูลระบบภาพรวม</h3>
+                <p class="text-xs mb-10 font-light leading-relaxed" style="color:var(--text-muted)">ดูสถิติและข้อมูลการทำงานย้อนหลังของคลังสินค้า Store 25 และ R1 แบบละเอียด</p>
                 <a href="dashboard.html" class="text-[10px] font-bold uppercase tracking-widest border-b-2 pb-1 eng" style="border-color:var(--text-primary)">เปิดแดชบอร์ด</a>
             </div>
 
             <div class="module-card">
+                <i class="fa-solid fa-chart-pie text-3xl mb-8"></i>
+                <h3 class="text-xl font-bold mb-4 eng">สรุปงานวิศวกรรม</h3>
+                <p class="text-xs mb-10 font-light leading-relaxed" style="color:var(--text-muted)">ติดตามและบันทึกรายงานผลการซ่อมบำรุง รวมถึงแผน PM ของเครื่องจักรทั้งหมด</p>
+                <a href="dashboard-work.html" class="text-[10px] font-bold uppercase tracking-widest border-b-2 pb-1 eng" style="border-color:var(--text-primary)">ดูสรุปงาน</a>
+            </div>
+
+            <div class="module-card">
                 <i class="fa-solid fa-clock-rotate-left text-3xl mb-8"></i>
-                <h3 class="text-2xl font-bold mb-4 eng">บันทึกเวลาทำงาน</h3>
-                <p class="text-sm mb-10 font-light leading-relaxed" style="color:var(--text-muted)">ระบบลงเวลาปฏิบัติงานสำหรับพนักงานฝ่ายวิศวกรรมและซ่อมบำรุง</p>
+                <h3 class="text-xl font-bold mb-4 eng">บันทึกเวลาทำงาน</h3>
+                <p class="text-xs mb-10 font-light leading-relaxed" style="color:var(--text-muted)">ระบบลงเวลาปฏิบัติงานสำหรับพนักงานฝ่ายวิศวกรรมและซ่อมบำรุง</p>
                 <a href="working-time.html" class="text-[10px] font-bold uppercase tracking-widest border-b-2 pb-1 eng" style="border-color:var(--text-primary)">ลงชื่อเข้าใช้งาน</a>
             </div>
 
             <div class="module-card">
                 <i class="fa-solid fa-warehouse text-3xl mb-8"></i>
-                <h3 class="text-2xl font-bold mb-4 eng">คลังพัสดุและอะไหล่</h3>
-                <p class="text-sm mb-10 font-light leading-relaxed" style="color:var(--text-muted)">จัดการเบิก-จ่าย และตรวจสอบจำนวนอะไหล่คงคลังในระบบดิจิทัล</p>
+                <h3 class="text-xl font-bold mb-4 eng">คลังพัสดุและอะไหล่</h3>
+                <p class="text-xs mb-10 font-light leading-relaxed" style="color:var(--text-muted)">จัดการเบิก-จ่าย และตรวจสอบจำนวนอะไหล่คงคลังในระบบดิจิทัล</p>
                 <a href="inventory-select.html" class="text-[10px] font-bold uppercase tracking-widest border-b-2 pb-1 eng" style="border-color:var(--text-primary)">จัดการคลังสินค้า</a>
             </div>
         </div>
@@ -355,6 +389,11 @@ function toggleDark() {
     const newTheme = isDark ? 'light' : 'dark';
     html.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
+    
+    // อัปเดตสีสีกราฟให้เหมาะสมกับโหมดความมืด/สว่างทันทีที่มีการกดสลับโหมด
+    if(window.mechChart) {
+        updateChartTheme(newTheme);
+    }
 }
 
 (function() {
@@ -394,7 +433,76 @@ async function fetchAllStats() {
     }
 }
 
-window.onload = fetchAllStats;
+// ===== ENGINE การสร้างกราฟ DASHBOARD =====
+function initDashboardChart() {
+    const ctx = document.getElementById('mechMainChart').getContext('2d');
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const textColor = currentTheme === 'dark' ? '#ffffff' : '#000000';
+    const gridColor = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+
+    window.mechChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.'],
+            datasets: [
+                {
+                    label: 'ใบแจ้งซ่อม (Jobs)',
+                    data: [12, 19, 3, 5, 2, 3],
+                    backgroundColor: 'rgba(245, 158, 11, 0.7)', // สีส้ม Amber ใส
+                    borderColor: '#f59e0b',
+                    borderWidth: 1
+                },
+                {
+                    label: 'พัสดุเบิกจ่าย (Items x10)',
+                    data: [8, 12, 15, 6, 8, 11],
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)', // สีเขียว Emerald ใส
+                    borderColor: '#10b981',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: textColor,
+                        font: { family: 'Sarabun' }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { family: 'Sarabun' } }
+                },
+                y: {
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { family: 'Chakra Petch' } }
+                }
+            }
+        }
+    });
+}
+
+function updateChartTheme(theme) {
+    const textColor = theme === 'dark' ? '#ffffff' : '#000000';
+    const gridColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+    
+    window.mechChart.options.plugins.legend.labels.color = textColor;
+    window.mechChart.options.scales.x.grid.color = gridColor;
+    window.mechChart.options.scales.x.ticks.color = textColor;
+    window.mechChart.options.scales.y.grid.color = gridColor;
+    window.mechChart.options.scales.y.ticks.color = textColor;
+    window.mechChart.update();
+}
+
+// โหลดข้อมูลสถิติและกราฟพร้อมกันเมื่อหน้าเว็บเปิดตัว
+window.onload = function() {
+    fetchAllStats();
+    initDashboardChart();
+};
 </script>
 </body>
 </html>
