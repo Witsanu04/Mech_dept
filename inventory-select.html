@@ -20,6 +20,10 @@
             --muted: #888888;
             --shadow-card: 0 4px 20px rgba(0,0,0,0.02);
             --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.05);
+            /* เพิ่มตัวแปรสีที่ขาดหายสำหรับ Nav Item */
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
         }
         [data-theme="dark"] {
             --bg: #0a0a0a;
@@ -31,6 +35,10 @@
             --muted: #666666;
             --shadow-card: 0 4px 20px rgba(0,0,0,0.5);
             --shadow-nav: 0 10px 25px -5px rgba(0,0,0,0.8);
+            /* เพิ่มตัวแปรสีโหมดมืดที่ขาดหายสำหรับ Nav Item */
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --text-muted: #666666;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -68,17 +76,18 @@
             position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
             background: var(--bg-nav); height: 60px; padding: 0 8px; border-radius: 0px;
             display: flex; align-items: center; gap: 5px; z-index: 2000;
-            box-shadow: var(--shadow-nav); width: fit-content; min-width: 580px;
+            box-shadow: var(--shadow-nav); width: fit-content; min-width: 550px;
             border: 1px solid var(--border); transition: background .3s, border .3s;
+            backdrop-filter: blur(10px);
         }
         .nav-item {
-            display: flex; align-items: center; gap: 8px; color: var(--fg);
-            opacity: 0.6; text-decoration: none; font-weight: 500; padding: 10px 15px;
+            display: flex; align-items: center; gap: 8px; color: var(--text-secondary);
+            text-decoration: none; font-weight: 500; padding: 10px 15px;
             border-radius: 0px; font-size: 13px; font-family: 'Noto Sans Thai', sans-serif;
             transition: all .2s; white-space: nowrap;
         }
-        .nav-item:hover { background: var(--bg-hover); opacity: 1; }
-        .nav-item.active { background: var(--fg); color: var(--bg); font-weight: bold; opacity: 1; }
+        .nav-item:hover { background: var(--bg-hover); }
+        .nav-item.active { background: var(--text-primary); color: var(--bg); font-weight: bold; }
 
         /* ===== BOTTOM NAV (MOBILE) ===== */
         .bottom-nav {
@@ -88,18 +97,19 @@
             z-index: 2000; padding: 8px 0 env(safe-area-inset-bottom, 8px);
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
             transition: background .3s;
+            backdrop-filter: blur(10px);
         }
         .bottom-nav-inner {
             display: flex; justify-content: space-around; align-items: center;
         }
         .bnav-item {
             display: flex; flex-direction: column; align-items: center; gap: 3px;
-            color: var(--muted); text-decoration: none;
+            color: var(--text-muted); text-decoration: none;
             font-size: 10px; font-family: 'Noto Sans Thai', sans-serif;
             padding: 6px 12px; transition: all .2s; min-width: 56px;
         }
         .bnav-item i { font-size: 18px; }
-        .bnav-item.active { color: var(--fg); font-weight: bold; }
+        .bnav-item.active { color: var(--text-primary); font-weight: bold; }
 
         /* ─── MAIN CONTENT ─── */
         .page {
@@ -210,8 +220,8 @@
 <body>
 
 <button class="dark-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
-    <i class="fa-solid fa-moon text-base icon-moon"></i>
-    <i class="fa-solid fa-sun text-base icon-sun"></i>
+    <i class="fa-solid fa-moon text-slate-400 text-base icon-moon"></i>
+    <i class="fa-solid fa-sun text-yellow-400 text-base icon-sun"></i>
 </button>
 
 <nav class="top-nav-bar">
@@ -228,7 +238,7 @@
         <a href="dashboard.html" class="bnav-item"><i class="fa-solid fa-chart-line"></i><span>สต็อก</span></a>
         <a href="dashboard-work.html" class="bnav-item"><i class="fa-solid fa-chart-pie"></i><span>สรุปงาน</span></a>
         <a href="working-time.html" class="bnav-item"><i class="fa-solid fa-user-clock"></i><span>บันทึกเวลา</span></a>
-        <a href="inventory-select.html" class="bnav-item active"><i class="fa-solid fa-boxes-stacked"></i><span>สต็อก</span></a>
+        <a href="inventory-select.html" class="bnav-item active"><i class="fa-solid fa-boxes-stacked"></i><span>จัดการสต็อก</span></a>
     </div>
 </nav>
 
@@ -258,13 +268,13 @@
 </div>
 
 <script>
-    // ===== SYSTEM LIGHT/DARK THEME (มาตรฐานเดียวกับทั้งโปรเจกต์) =====
+    // ===== SYSTEM LIGHT/DARK THEME =====
     function toggleTheme() {
         const html = document.documentElement;
         const isDark = html.getAttribute('data-theme') === 'dark';
         const newTheme = isDark ? 'light' : 'dark';
         html.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme); // เปลี่ยนชื่อคีย์เป็น 'theme' เหมือนหน้าอื่น
+        localStorage.setItem('theme', newTheme); 
     }
 
     // โหลดความจำธีมทันทีเพื่อป้องกันจอกระพริบ (IIFE)
@@ -279,7 +289,7 @@
 
     // ===== ACCESSIBILITY CHECK SYSTEM =====
     function checkAccess(event, targetPage) {
-        event.preventDefault(); // บล็อกชั่วคราว
+        event.preventDefault(); // บล็อกการเปลี่ยนหน้าชั่วคราว
         
         // ตรวจสอบข้อมูลล็อกอินใน Session
         if (sessionStorage.getItem("isLoggedIn") !== "true") {
